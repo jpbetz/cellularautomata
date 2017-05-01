@@ -22,7 +22,7 @@ func (life Life) Rune() rune {
 }
 
 func (life Life) FgAttribute() termbox.Attribute {
-	return termbox.ColorYellow
+	return termbox.ColorBlue
 }
 
 type GameOfLife struct {
@@ -52,10 +52,10 @@ func NewGameOfLife(cells [][]io.Cell, ui io.Renderer) *GameOfLife {
 func (this GameOfLife) initialize() {
 	example := [][]io.Cell {
 		{Off, Off, Off, Off, Off, Off },
-		{Off, Alive, Alive, Off, Off, Off },
-		{Off, Alive, Off, Off, Off, Off },
+		{Off, Off, Off, Off, Off, Off },
+		{Off, Off, Off, Alive, Off, Off },
 		{Off, Off, Off, Off, Alive, Off },
-		{Off, Off, Off, Alive, Alive, Off },
+		{Off, Off, Alive, Alive, Alive, Off },
 		{Off, Off, Off, Off, Off, Off },
 	}
 
