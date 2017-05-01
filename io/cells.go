@@ -4,7 +4,7 @@ import "github.com/nsf/termbox-go"
 
 type Cell interface {
 	Rune() rune
-	Attribute() termbox.Attribute
+	FgAttribute() termbox.Attribute
 }
 
 type Position struct {

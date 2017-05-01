@@ -21,7 +21,7 @@ func (life Life) Rune() rune {
 	}
 }
 
-func (life Life) Attribute() termbox.Attribute {
+func (life Life) FgAttribute() termbox.Attribute {
 	return termbox.ColorYellow
 }
 

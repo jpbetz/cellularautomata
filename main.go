@@ -8,11 +8,7 @@ import (
 )
 
 func main() {
-	input := &io.Input{
-		Click: make(chan io.Position, 1),
-		PausePlay: make (chan bool, 1),
-		Quit: make (chan bool, 1),
-	}
+	input := make(chan io.InputEvent, 100)
 
 	ui := termboxui.NewTermboxUI(input)
 	defer ui.Close()
@@ -33,18 +29,21 @@ func main() {
 
 	for {
 		select {
-		case <-input.Quit:
-			return
-		case position := <-input.Click:
-			game.Toggle(game.Cells, position)
-			ui.Draw()
-		case <-input.PausePlay:
-			if game.Playing {
-				eventClock.Stop()
-				game.Playing = false
-			} else {
-				eventClock = game.StartClock()
-				game.Playing = true
+		case in := <-input:
+			switch in.(type) {
+			case io.Quit:
+				return
+			case io.Click:
+				game.Toggle(game.Cells, in.(io.Click).Position)
+				ui.Draw()
+			case io.Pause:
+				if game.Playing {
+					eventClock.Stop()
+					game.Playing = false
+				} else {
+					eventClock = game.StartClock()
+					game.Playing = true
+				}
 			}
 		}
 	}

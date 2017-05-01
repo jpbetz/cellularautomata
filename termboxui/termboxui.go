@@ -3,15 +3,17 @@ package termboxui
 import (
 	"github.com/nsf/termbox-go"
 	"github.com/jpbetz/cellularautomata/io"
+	"fmt"
+	"github.com/mattn/go-runewidth"
 )
 
 type TermboxUI struct {
   backbuf []termbox.Cell
 	refreshCh chan bool
-	input *io.Input
+	input chan io.InputEvent
 }
 
-func NewTermboxUI(input *io.Input) *TermboxUI {
+func NewTermboxUI(input chan io.InputEvent) *TermboxUI {
 	err := termbox.Init()
 	if err != nil {
 		panic(err)
@@ -49,7 +51,7 @@ func pos(x int, y int) int {
 }
 
 func (ui TermboxUI) Set(position io.Position, cell io.Cell) {
-	ui.backbuf[pos(position.X, position.Y)] = termbox.Cell{Ch: cell.Rune(), Fg: cell.Attribute()}
+	ui.backbuf[pos(position.X, position.Y)] = termbox.Cell{Ch: cell.Rune(), Fg: cell.FgAttribute()}
 }
 
 func (ui TermboxUI) Draw() {
@@ -60,21 +62,40 @@ func (ui TermboxUI) handleInput() {
 	for {
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
-			if ev.Key == termbox.KeyEsc {
-				ui.input.Quit <- true
+			if ev.Ch == 'q' {
+				ui.input <- io.Quit{}
 				return
 			} else if ev.Key == termbox.KeySpace {
-				ui.input.PausePlay <- true
+				ui.input <- io.Pause{}
 			}
 		case termbox.EventMouse:
 			if ev.Key == termbox.MouseLeft {
-				ui.input.Click <- io.Position{ev.MouseX, ev.MouseY}
+				ui.input <- io.Click {Position: io.Position{ev.MouseX, ev.MouseY}}
+				ui.Draw()
 			}
 		case termbox.EventResize:
 			ui.reallocBackBuffer(ev.Width, ev.Height)
+			ui.Draw()
+		default:
+			ui.warn(fmt.Sprintf("Unexpected input: %v", ev))
+			ui.Draw()
 		}
+	}
+}
 
-		ui.Draw()
+func (ui TermboxUI) warn(msg string) {
+	_, h := termbox.Size()
+	ui.tbprint(0,h-1, termbox.ColorBlue, termbox.ColorBlack, msg)
+}
+
+func (ui TermboxUI) tbprint(x, y int, fg, bg termbox.Attribute, msg string) {
+	w, _ := termbox.Size()
+	for _, c := range msg {
+		if x >= w {
+			return
+		}
+		ui.backbuf[pos(x, y)] = termbox.Cell{Ch: c, Fg: fg, Bg: bg}
+		x += runewidth.RuneWidth(c)
 	}
 }
 
