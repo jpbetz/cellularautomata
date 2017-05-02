@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/nsf/termbox-go"
 	"github.com/jpbetz/cellularautomata/io"
 	"github.com/jpbetz/cellularautomata/termboxui"
 	"github.com/jpbetz/cellularautomata/conway"
+	"github.com/jpbetz/cellularautomata/grid"
 )
 
 func main() {
@@ -14,16 +14,11 @@ func main() {
 	defer ui.Close()
 	ui.Run()
 
-	w, h := termbox.Size()
-
-	cells := make([][]io.Cell, w)
-	for row := range cells {
-		cells[row] = make([]io.Cell, h)
-		for i := 0; i < h; i++ {
-			cells[row][i] = conway.Off
-		}
-	}
-	game := conway.NewGameOfLife(cells, ui)
+	board := grid.NewBasicBoard(1000, 1000)
+	view := &io.View{Plane: board, Offset: grid.Origin}
+	ui.SetView(view)
+	board.Initialize(conway.Life{Alive: false})
+	game := conway.NewGameOfLife(board, ui)
 	eventClock := game.StartClock()
 	game.Playing = true
 
@@ -34,7 +29,7 @@ func main() {
 			case io.Quit:
 				return
 			case io.Click:
-				game.Toggle(game.Cells, in.(io.Click).Position)
+				game.Toggle(game.Plane, in.(io.Click).Position)
 				ui.Draw()
 			case io.Pause:
 				if game.Playing {

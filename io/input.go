@@ -1,11 +1,13 @@
 package io
 
+import "github.com/jpbetz/cellularautomata/grid"
+
 type InputEvent interface {
 	EventName() string
 }
 
 type Click struct {
-	Position Position
+	Position grid.Position
 }
 func (Click) EventName() string {
 	return "Click"

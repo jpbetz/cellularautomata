@@ -1,13 +1,14 @@
 package conway
 
 import (
-	"github.com/nsf/termbox-go"
 	"github.com/jpbetz/cellularautomata/io"
 	"github.com/jpbetz/cellularautomata/engine"
+	"github.com/jpbetz/cellularautomata/grid"
+	"github.com/nsf/termbox-go"
 )
 
-var ALIVE = '█'
-var DEAD = ' '
+const ALIVE = '█'
+const DEAD = ' '
 
 type Life struct {
 	Alive bool
@@ -26,10 +27,10 @@ func (life Life) FgAttribute() termbox.Attribute {
 }
 
 type GameOfLife struct {
-	engine.Engine
+	*engine.Engine
 }
 
-func asLife(cell io.Cell) Life {
+func asLife(cell grid.Cell) Life {
 	life, ok := cell.(Life)
 	if !ok {
 		panic("Expected Life cell")
@@ -40,17 +41,17 @@ func asLife(cell io.Cell) Life {
 var Alive = Life{Alive: true}
 var Off = Life{Alive: false}
 
-func NewGameOfLife(cells [][]io.Cell, ui io.Renderer) *GameOfLife {
+func NewGameOfLife(plane grid.Plane, ui io.Renderer) *GameOfLife {
 	game := &GameOfLife{
-		Engine: engine.Engine{Cells: cells, UI: ui},
+		Engine: &engine.Engine{Plane: plane, UI: ui},
 	}
 	game.Engine.Handler = game
 	game.initialize()
 	return game
 }
 
-func (this GameOfLife) initialize() {
-	example := [][]io.Cell {
+func (g *GameOfLife) initialize() {
+	example := [][]grid.Cell {
 		{Off, Off, Off, Off, Off, Off },
 		{Off, Off, Off, Off, Off, Off },
 		{Off, Off, Off, Alive, Off, Off },
@@ -61,20 +62,26 @@ func (this GameOfLife) initialize() {
 
 	for i := 0; i < 6; i++ {
 		for j := 0; j < 6; j++ {
-			this.Set(io.Position{i, j}, example[i][j])
+			g.Set(grid.Position{i, j}, example[i][j])
 		}
 	}
 }
 
-func (this GameOfLife) UpdateCell(cells [][]io.Cell, x, y int) (state io.Cell, changed bool) {
-	w, h := termbox.Size()
-	cell := asLife(cells[x][y])
+func (g *GameOfLife) UpdateCell(plane grid.Plane, position grid.Position) (state grid.Cell, changed bool) {
+
+	x, y := position.X, position.Y
+	bounds := plane.Bounds()
+	if !bounds.Contains(position) {
+		return
+	}
+
+	cell := asLife(plane.Get(position))
 
 	neighbors := 0
 	for i := x - 1; i <= x+1; i++ {
 		for j := y - 1; j <= y+1; j++ {
-			if !(i == x && j == y) && i >= 0 && j >= 0 && i < w && j < h {
-				neighbor := asLife(cells[i][j])
+			if !(i == x && j == y) && i >= 0 && j >= 0 && i <= bounds.X2Y2.X && j <= bounds.X2Y2.Y {
+				neighbor := asLife(plane.Get(grid.Position{i, j}))
 				if neighbor.Alive {
 					neighbors += 1
 				}
@@ -93,11 +100,14 @@ func (this GameOfLife) UpdateCell(cells [][]io.Cell, x, y int) (state io.Cell, c
 	return Off, false
 }
 
-func (this GameOfLife) Toggle(cells [][]io.Cell, position io.Position) {
-	cell := asLife(cells[position.X][position.Y])
+func (g *GameOfLife) Toggle(plane grid.Plane, position grid.Position) {
+	if !plane.Bounds().Contains(position) {
+		return
+	}
+	cell := asLife(plane.Get(position))
 	if cell.Alive {
-		this.Set(position, Life{Alive: false})
+		g.Set(position, Life{Alive: false})
 	} else {
-		this.Set(position, Life{Alive: true})
+		g.Set(position, Life{Alive: true})
 	}
 }
