@@ -63,7 +63,7 @@ func (ui *TermboxUI) Set(position grid.Position, cell grid.Cell) {
 	p := pos(position.X - ui.View.Offset.X, position.Y - ui.View.Offset.Y)
 
 	if p >= 0 && p < len(ui.backbuf) {
-		ui.backbuf[p] = termbox.Cell{Ch: cell.Rune(), Fg: cell.FgAttribute()}
+		ui.backbuf[p] = termbox.Cell{Ch: cell.Rune(), Fg: cell.FgAttribute(), Bg: cell.BgAttribute()}
 	}
 }
 
@@ -76,8 +76,8 @@ func (ui *TermboxUI) FullRefresh() {
 	for i := 0; i < w; i++ {
 		for j := 0; j < h; j++ {
 			if x + i <= viewBound.X && y + j < viewBound.Y {
-				cell := p.Get(grid.Position{x + i, y + j})
-				ui.backbuf[pos(i, j)] = termbox.Cell{Ch: cell.Rune(), Fg: cell.FgAttribute()}
+				cell := p.Get(grid.Position{X: x + i, Y: y + j})
+				ui.backbuf[pos(i, j)] = termbox.Cell{Ch: cell.Rune(), Fg: cell.FgAttribute(), Bg: cell.BgAttribute()}
 			} else {
 				ui.backbuf[pos(i, j)] = termbox.Cell{}
 			}

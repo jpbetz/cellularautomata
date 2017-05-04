@@ -7,8 +7,13 @@ import (
 	"github.com/jpbetz/cellularautomata/grid"
 )
 
+type CellUpdate struct {
+  State grid.Cell
+	Position grid.Position
+}
+
 type UpdateHandler interface {
-	UpdateCell(plane grid.Plane, position grid.Position) (state grid.Cell, changed bool)
+	UpdateCell(plane grid.Plane, position grid.Position) []CellUpdate
 }
 
 type Engine struct {
@@ -19,7 +24,7 @@ type Engine struct {
 }
 
 func (e *Engine) StartClock() *time.Ticker {
-	eventClock := time.NewTicker(time.Millisecond * 500)
+	eventClock := time.NewTicker(time.Millisecond * 10)
 	go func() {
 		for range eventClock.C {
 			e.clockEvent()
@@ -29,26 +34,20 @@ func (e *Engine) StartClock() *time.Ticker {
 	return eventClock
 }
 
-type CellChange struct {
-	Position grid.Position
-	Cell grid.Cell
-}
-
 func (e *Engine) clockEvent() {
 	w, h := termbox.Size()
-	changes := []CellChange {}
+	changes := []CellUpdate {}
 	for i := 0; i < w; i++ {
 		for j := 0; j < h; j++ {
-			state, changed := e.Handler.UpdateCell(e.Plane, grid.Position{i, j})
-			if changed {
-				change := CellChange{grid.Position{i, j}, state}
-				e.UI.Set(change.Position, change.Cell)
-				changes = append(changes, change)
+			updates := e.Handler.UpdateCell(e.Plane, grid.Position{X: i, Y: j})
+			for _, update := range updates {
+				changes = append(changes, update)
 			}
 		}
 	}
 	for _, change := range changes {
-		e.Plane.Set(change.Position, change.Cell)
+		e.Plane.Set(change.Position, change.State)
+		e.UI.Set(change.Position, change.State)
 	}
 	e.UI.Draw()
 }

@@ -26,6 +26,11 @@ func (life Life) FgAttribute() termbox.Attribute {
 	return termbox.ColorBlue
 }
 
+func (life Life) BgAttribute() termbox.Attribute {
+	return termbox.ColorDefault
+}
+
+
 type GameOfLife struct {
 	*engine.Engine
 }
@@ -67,12 +72,12 @@ func (g *GameOfLife) initialize() {
 	}
 }
 
-func (g *GameOfLife) UpdateCell(plane grid.Plane, position grid.Position) (state grid.Cell, changed bool) {
+func (g *GameOfLife) UpdateCell(plane grid.Plane, position grid.Position) []engine.CellUpdate {
 
 	x, y := position.X, position.Y
 	bounds := plane.Bounds()
 	if !bounds.Contains(position) {
-		return
+		return []engine.CellUpdate {}
 	}
 
 	cell := asLife(plane.Get(position))
@@ -90,14 +95,14 @@ func (g *GameOfLife) UpdateCell(plane grid.Plane, position grid.Position) (state
 	}
 	if cell.Alive {
 		if neighbors >= 2 && neighbors <= 3 {
-			return Alive, true
+			return []engine.CellUpdate {{Alive, position}}
 		} else {
-			return Off, true
+			return []engine.CellUpdate {{Off, position}}
 		}
 	} else if !cell.Alive && neighbors == 3 {
-		return Alive, true
+		return []engine.CellUpdate {{Alive, position}}
 	}
-	return Off, false
+	return []engine.CellUpdate {}
 }
 
 func (g *GameOfLife) Toggle(plane grid.Plane, position grid.Position) {

@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/jpbetz/cellularautomata/io"
 	"github.com/jpbetz/cellularautomata/termboxui"
-	"github.com/jpbetz/cellularautomata/conway"
 	"github.com/jpbetz/cellularautomata/grid"
+	"github.com/jpbetz/cellularautomata/langton"
 )
 
 func main() {
@@ -17,8 +17,10 @@ func main() {
 	board := grid.NewBasicBoard(1000, 1000)
 	view := &io.View{Plane: board, Offset: grid.Origin}
 	ui.SetView(view)
-	board.Initialize(conway.Life{Alive: false})
-	game := conway.NewGameOfLife(board, ui)
+	//board.Initialize(conway.Life{Alive: false})
+	board.Initialize(langton.Square{})
+	//game := conway.NewGameOfLife(board, ui)
+	game := langton.NewAnts(board, ui)
 	eventClock := game.StartClock()
 	game.Playing = true
 
@@ -29,8 +31,8 @@ func main() {
 			case io.Quit:
 				return
 			case io.Click:
-				game.Toggle(game.Plane, in.(io.Click).Position)
-				ui.Draw()
+				//game.Toggle(game.Plane, in.(io.Click).Position)
+				//ui.Draw()
 			case io.Pause:
 				if game.Playing {
 					eventClock.Stop()
