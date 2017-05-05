@@ -4,6 +4,7 @@ import "github.com/nsf/termbox-go"
 
 type Plane interface {
 	Get(position Position) Cell
+  GetNeighbors(p Position) []Cell
 	Set(position Position, cell Cell)
 	Bounds() Rectangle
 }

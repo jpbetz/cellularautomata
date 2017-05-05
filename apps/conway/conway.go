@@ -74,7 +74,6 @@ func (g *GameOfLife) initialize() {
 
 func (g *GameOfLife) UpdateCell(plane grid.Plane, position grid.Position) []engine.CellUpdate {
 
-	x, y := position.X, position.Y
 	bounds := plane.Bounds()
 	if !bounds.Contains(position) {
 		return []engine.CellUpdate {}
@@ -83,14 +82,10 @@ func (g *GameOfLife) UpdateCell(plane grid.Plane, position grid.Position) []engi
 	cell := asLife(plane.Get(position))
 
 	neighbors := 0
-	for i := x - 1; i <= x+1; i++ {
-		for j := y - 1; j <= y+1; j++ {
-			if !(i == x && j == y) && i >= 0 && j >= 0 && i <= bounds.X2Y2.X && j <= bounds.X2Y2.Y {
-				neighbor := asLife(plane.Get(grid.Position{i, j}))
-				if neighbor.Alive {
-					neighbors += 1
-				}
-			}
+	for _, neighbor := range plane.GetNeighbors(position) {
+		neighbor := asLife(neighbor)
+		if neighbor.Alive {
+			neighbors += 1
 		}
 	}
 	if cell.Alive {

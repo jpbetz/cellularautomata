@@ -24,7 +24,7 @@ type Engine struct {
 }
 
 func (e *Engine) StartClock() *time.Ticker {
-	eventClock := time.NewTicker(time.Millisecond * 10)
+	eventClock := time.NewTicker(time.Millisecond * 500)
 	go func() {
 		for range eventClock.C {
 			e.clockEvent()

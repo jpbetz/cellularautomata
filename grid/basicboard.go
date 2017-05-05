@@ -29,6 +29,20 @@ func (b *BasicBoard) Get(p Position) Cell {
 	return b.cells[p.Y*b.w + p.X]
 }
 
+func (b *BasicBoard) GetNeighbors(p Position) []Cell {
+	neighbors := make([]Cell, 0, 8)
+	bounds := b.Bounds()
+	x, y := p.X, p.Y
+	for i := x - 1; i <= x+1; i++ {
+		for j := y - 1; j <= y+1; j++ {
+			if !(i == x && j == y) && i >= 0 && j >= 0 && i <= bounds.X2Y2.X && j <= bounds.X2Y2.Y {
+				neighbors = append(neighbors, b.Get(Position {i, j }))
+			}
+		}
+	}
+	return neighbors
+}
+
 func (b *BasicBoard) Set(p Position, cell Cell) {
 	b.cells[p.Y*b.w + p.X] = cell
 }
