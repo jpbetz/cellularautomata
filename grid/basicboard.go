@@ -35,7 +35,7 @@ func (b *BasicBoard) GetNeighbors(p Position) []Cell {
 	x, y := p.X, p.Y
 	for i := x - 1; i <= x+1; i++ {
 		for j := y - 1; j <= y+1; j++ {
-			if !(i == x && j == y) && i >= 0 && j >= 0 && i <= bounds.X2Y2.X && j <= bounds.X2Y2.Y {
+			if !(i == x && j == y) && i >= 0 && j >= 0 && i <= bounds.corner2.X && j <= bounds.corner2.Y {
 				neighbors = append(neighbors, b.Get(Position {i, j }))
 			}
 		}
@@ -48,5 +48,5 @@ func (b *BasicBoard) Set(p Position, cell Cell) {
 }
 
 func (b *BasicBoard) Bounds() Rectangle {
-	return Rectangle{ X1Y1: Origin, X2Y2: Position{ X: b.w-1, Y: b.h-1} }
+	return Rectangle{ corner1: Origin, corner2: Position{ X: b.w-1, Y: b.h-1} }
 }

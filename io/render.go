@@ -7,6 +7,7 @@ type Renderer interface {
 	Close()
 	Set(position grid.Position, change grid.Cell)
 	Draw()
+	SetStatus(msg string)
 }
 
 type View struct {

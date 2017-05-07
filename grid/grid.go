@@ -4,7 +4,7 @@ import "github.com/nsf/termbox-go"
 
 type Plane interface {
 	Get(position Position) Cell
-  GetNeighbors(p Position) []Cell
+  	GetNeighbors(p Position) []Cell
 	Set(position Position, cell Cell)
 	Bounds() Rectangle
 }
@@ -28,8 +28,8 @@ const (
 	Left
 )
 
-func (o Orientation) Rotate(halfTurns int) Orientation {
-	applied := (int(o) + halfTurns) % 4
+func (o Orientation) Rotate(halfTurnsCW int) Orientation {
+	applied := (int(o) + halfTurnsCW) % 4
 	if applied < 0 {
 		applied += 4
 	}
@@ -54,10 +54,10 @@ func (p Position) Translate(orientation Orientation, distance int) Position {
 var Origin = Position{0, 0}
 
 type Rectangle struct {
-	X1Y1 Position
-  X2Y2 Position
+	corner1 Position
+  	corner2 Position
 }
 
 func (r Rectangle) Contains(position Position) bool {
-	return position.X >= r.X1Y1.X && position.X <= r.X2Y2.X && position.Y >= r.X1Y1.Y && position.Y <= r.X2Y2.Y
+	return position.X >= r.corner1.X && position.X <= r.corner2.X && position.Y >= r.corner1.Y && position.Y <= r.corner2.Y
 }

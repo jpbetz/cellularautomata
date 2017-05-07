@@ -101,6 +101,7 @@ func (g *Wireworld) initialize() {
 			g.Set(grid.Position{j, i}, example[i][j])
 		}
 	}
+	g.UI.SetStatus("WireWorld")
 }
 
 func (g *Wireworld) UpdateCell(plane grid.Plane, position grid.Position) []engine.CellUpdate {
