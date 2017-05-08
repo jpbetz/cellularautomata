@@ -7,14 +7,63 @@ import (
 	"github.com/jpbetz/cellularautomata/apps/langton"
 	"github.com/jpbetz/cellularautomata/apps/conway"
 	"github.com/jpbetz/cellularautomata/apps/wireworld"
+	"github.com/jpbetz/cellularautomata/apps/guardduty"
 )
 
 func main() {
 	//conwayMain()
 	//langtonMain()
-	wireworldMain()
+	//wireworldMain()
+	guardDutyMain()
 }
 
+
+func guardDutyMain() {
+	input := make(chan io.InputEvent, 100)
+
+	ui := termboxui.NewTermboxUI(input)
+	defer ui.Close()
+	ui.Run()
+
+	board := grid.NewBasicBoard(100, 100)
+	view := &io.View{Plane: board, Offset: grid.Origin}
+	ui.SetView(view)
+
+	for x := 0; x < board.W; x++ {
+		for y := 0; y < board.H; y++ {
+			i := x + board.W * y
+			board.Cells[i] = guardduty.Cell{
+				State: guardduty.Empty,
+				Position: grid.Position {X:x, Y:y},
+				Plane: board,
+			}
+		}
+	}
+
+	game := guardduty.NewGuardDuty(board, ui)
+	eventClock := game.StartClock()
+	game.Playing = true
+
+	for {
+		select {
+		case in := <-input:
+			switch in.(type) {
+			case io.Quit:
+				return
+			case io.Click:
+
+			case io.Pause:
+				if game.Playing {
+					eventClock.Stop()
+					game.Playing = false
+				} else {
+					eventClock = game.StartClock()
+					game.Playing = true
+				}
+			}
+		}
+	}
+}
 
 func wireworldMain() {
 	input := make(chan io.InputEvent, 100)

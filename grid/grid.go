@@ -1,9 +1,13 @@
 package grid
 
-import "github.com/nsf/termbox-go"
+import (
+	"github.com/nsf/termbox-go"
+	"math"
+)
 
 type Plane interface {
 	Get(position Position) Cell
+	GetNeighborPositions(p Position) []Position
   	GetNeighbors(p Position) []Cell
 	Set(position Position, cell Cell)
 	Bounds() Rectangle
@@ -17,6 +21,10 @@ type Cell interface {
 
 type Position struct {
 	X, Y int
+}
+
+func (p1 Position) DistanceTo(p2 Position) float64 {
+	return math.Sqrt(math.Pow(math.Abs(float64(p2.X-p1.X)), 2) + math.Pow(math.Abs(float64(p2.Y-p1.Y)), 2))
 }
 
 type Orientation int
@@ -54,10 +62,10 @@ func (p Position) Translate(orientation Orientation, distance int) Position {
 var Origin = Position{0, 0}
 
 type Rectangle struct {
-	corner1 Position
-  	corner2 Position
+	Corner1 Position
+  	Corner2 Position
 }
 
 func (r Rectangle) Contains(position Position) bool {
-	return position.X >= r.corner1.X && position.X <= r.corner2.X && position.Y >= r.corner1.Y && position.Y <= r.corner2.Y
+	return position.X >= r.Corner1.X && position.X <= r.Corner2.X && position.Y >= r.Corner1.Y && position.Y <= r.Corner2.Y
 }

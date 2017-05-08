@@ -70,6 +70,7 @@ func (g *GameOfLife) initialize() {
 			g.Set(grid.Position{i, j}, example[i][j])
 		}
 	}
+	g.UI.SetStatus("Conway's game of life")
 }
 
 func (g *GameOfLife) UpdateCell(plane grid.Plane, position grid.Position) []engine.CellUpdate {

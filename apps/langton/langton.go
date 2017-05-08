@@ -79,6 +79,7 @@ func NewAnts(plane grid.Plane, ui io.Renderer) *Ants {
 func (g *Ants) initialize() {
 	w, h := termbox.Size()
 	g.Set(grid.Position{w/2, h/2}, AntStart)
+	g.UI.SetStatus("Langton's Ants")
 }
 
 func (g *Ants) UpdateCell(plane grid.Plane, position grid.Position) []engine.CellUpdate {

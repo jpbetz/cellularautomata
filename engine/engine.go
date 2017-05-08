@@ -8,7 +8,7 @@ import (
 )
 
 type CellUpdate struct {
-  State grid.Cell
+  	State grid.Cell
 	Position grid.Position
 }
 
