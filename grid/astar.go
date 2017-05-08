@@ -4,7 +4,6 @@ import (
 	"container/heap"
 	"math"
 	"log"
-	"fmt"
 )
 
 // https://en.wikipedia.org/wiki/A*_search_algorithm
@@ -82,7 +81,6 @@ func FindPath(start, goal Node, estimateCost HuristicCostEstimateFunc) (*Path, b
 
 	for open.Len() > 0 {
 		current := heap.Pop(&open).(*priorityQueueNode)
-		log.Printf("Visiting: %v\n", current)
 		if current.node == goal {
 			// build the Nodes
 			path := make([]Node, 1)
@@ -118,7 +116,6 @@ func FindPath(start, goal Node, estimateCost HuristicCostEstimateFunc) (*Path, b
 				neighborCandidate.fromStartScore = tentativeFromStartScore
 				neighborCandidate.toGoalScoreViaCell = tentativeFromStartScore + estimateCost(neighborNode, goal)
 				heap.Fix(&open, neighborCandidate.index)
-				log.Printf(fmt.Sprintf("Setting PQ entry %v for %#v, tenatativeStartScore: %v", neighborCandidate.index, neighborCandidate, tentativeFromStartScore))
 			}
 		}
 	}
