@@ -1,6 +1,9 @@
 package grid
 
-import "testing"
+import (
+	"testing"
+	"fmt"
+)
 
 type TestPath struct {
 	TestNode Node
@@ -30,16 +33,64 @@ func (n TestNode) GetNeighbors() []Neighbor {
 	return results
 }
 
-var Node1 = &TestNode{ Position: Position {0, 0}, Neighbors: make([]*TestNode, 0)}
-var Node2 = &TestNode{ Position: Position {1, 0}, Neighbors: make([]*TestNode, 0)}
-var Node3 = &TestNode{ Position: Position {2, 0}, Neighbors: make([]*TestNode, 0)}
-var Node4 = &TestNode{ Position: Position {3, 0}, Neighbors: make([]*TestNode, 0)}
+func testNode(x, y int) *TestNode {
+	return &TestNode{ Position: Position {x, y}, Neighbors: make([]*TestNode, 0)}
+}
 
-func init() {
-	Node1.Neighbors = append(Node1.Neighbors, Node2)
-	Node2.Neighbors = append(Node2.Neighbors, Node1, Node3)
-	Node3.Neighbors = append(Node3.Neighbors, Node2, Node4)
-	Node4.Neighbors = append(Node4.Neighbors, Node3)
+func link(n1, n2 *TestNode) {
+	n1.Neighbors = append(n1.Neighbors, n2)
+	n2.Neighbors = append(n2.Neighbors, n1)
+}
+
+type NodeType int
+
+const (
+	O NodeType = iota
+	B
+	S
+	G
+)
+
+func toNodes(types [][]NodeType) (*TestNode, *TestNode) {
+	var start *TestNode
+	var goal *TestNode
+
+	var results = make([][]*TestNode, len(types))
+	// create the nodes, unconnected
+	for i := 0; i < len(types); i++ {
+		row := make([]*TestNode, len(types[i]))
+		for j := 0; j < len(types[i]); j++ {
+			switch types[i][j] {
+			case O:
+				row[j] = testNode(i, j)
+			case B:
+				row[j] = nil
+			case S:
+				start = testNode(i, j)
+				row[j] = start
+			case G:
+				goal = testNode(i, j)
+				row[j] = goal
+			}
+		}
+		results[i] = row
+	}
+
+	// connect the nodes
+	for i := 0; i < len(results); i++ {
+		for j := 0; j < len(results[i]); j++ {
+			for k := i-1; k <= i+1; k++ {
+				for l := j-1; l <= j+1; l++ {
+					validK := k >= 0 && k < len(results)
+					validL := l >= 0 && l < len(results[i])
+					if validK && validL && results[k][l] != nil && results[i][j] != nil && !(k == i && l == j) {
+						results[i][j].Neighbors = append(results[i][j].Neighbors, results[k][l])
+					}
+				}
+			}
+		}
+	}
+	return start, goal
 }
 
 func distance(n1, n2 Node) float64 {
@@ -47,6 +98,15 @@ func distance(n1, n2 Node) float64 {
 }
 
 func TestSimplePath(t *testing.T) {
+	Node1 := testNode(0, 0)
+	Node2 := testNode(1, 0)
+	Node3 := testNode(2, 0)
+	Node4 := testNode(3, 0)
+
+	link(Node1, Node2)
+	link(Node2, Node3)
+	link(Node3, Node4)
+
 	path, ok := FindPath(Node1, Node4, distance)
 	if !ok {
 		t.Error("Expected FindPath to return ok=true, but got ok=false.")
@@ -62,5 +122,39 @@ func TestSimplePath(t *testing.T) {
 
 	if route[3].(*TestNode) != Node1 {
 		t.Error("Expected Nodes to start at Node1")
+	}
+}
+
+func TestGrid(t *testing.T) {
+	start, goal := toNodes([][]NodeType{
+		{S, O, O, O},
+		{B, B, B, O},
+		{O, O, O, O},
+		{O, B, B, B},
+		{O, O, O, G},
+	})
+
+	path, ok := FindPath(start, goal, distance)
+	if !ok {
+		t.Error("Expected FindPath to return ok=true, but got ok=false.")
+	} else {
+		expected := []Position {
+			{4, 3},
+			{4, 2},
+			{4, 1},
+			{3, 0},
+			{2, 1},
+			{2, 2},
+			{1, 3},
+			{0, 2},
+			{0, 1},
+			{0, 0},
+		}
+		route := path.Nodes
+		for i, n := range route {
+			if n.(*TestNode).Position != expected[i] {
+				t.Error(fmt.Sprintf("Expected path[%d] to be %v but found %v", i, expected[i], n.(*TestNode).Position))
+			}
+		}
 	}
 }
