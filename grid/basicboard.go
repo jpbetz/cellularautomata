@@ -12,14 +12,14 @@ type BasicBoard struct {
 
 func NewBasicBoard(w, h int) *BasicBoard {
 	return &BasicBoard{
-		Cells: make([]Cell, w * h),
+		Cells: make([]Cell, w*h),
 		W:     w,
 		H:     h,
 	}
 }
 
 func (b *BasicBoard) Initialize(cell Cell) {
-	for i := 0; i < b.W* b.H; i++ {
+	for i := 0; i < b.W*b.H; i++ {
 		b.Cells[i] = cell
 	}
 }
@@ -31,7 +31,7 @@ func (b *BasicBoard) Get(p Position) Cell {
 	if p.Y >= b.H {
 		panic("position.y out of bounds")
 	}
-	return b.Cells[p.Y*b.W+ p.X]
+	return b.Cells[p.Y*b.W+p.X]
 }
 
 func (b *BasicBoard) GetNeighborPositions(p Position) []Position {
@@ -41,7 +41,7 @@ func (b *BasicBoard) GetNeighborPositions(p Position) []Position {
 	for i := x - 1; i <= x+1; i++ {
 		for j := y - 1; j <= y+1; j++ {
 			if !(i == x && j == y) && i >= 0 && j >= 0 && i <= bounds.Corner2.X && j <= bounds.Corner2.Y {
-				neighbors = append(neighbors, Position {i, j })
+				neighbors = append(neighbors, Position{i, j})
 			}
 		}
 	}
@@ -58,9 +58,9 @@ func (b *BasicBoard) GetNeighbors(p Position) []Cell {
 }
 
 func (b *BasicBoard) Set(p Position, cell Cell) {
-	b.Cells[p.Y*b.W+ p.X] = cell
+	b.Cells[p.Y*b.W+p.X] = cell
 }
 
 func (b *BasicBoard) Bounds() Rectangle {
-	return Rectangle{ Corner1: Origin, Corner2: Position{ X: b.W -1, Y: b.H -1} }
+	return Rectangle{Corner1: Origin, Corner2: Position{X: b.W - 1, Y: b.H - 1}}
 }

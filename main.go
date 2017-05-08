@@ -1,16 +1,16 @@
 package main
 
 import (
+	"fmt"
+	"github.com/jpbetz/cellularautomata/apps/conway"
+	"github.com/jpbetz/cellularautomata/apps/guardduty"
+	"github.com/jpbetz/cellularautomata/apps/langton"
+	"github.com/jpbetz/cellularautomata/apps/wireworld"
+	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
 	"github.com/jpbetz/cellularautomata/termboxui"
-	"github.com/jpbetz/cellularautomata/grid"
-	"github.com/jpbetz/cellularautomata/apps/langton"
-	"github.com/jpbetz/cellularautomata/apps/conway"
-	"github.com/jpbetz/cellularautomata/apps/wireworld"
-	"github.com/jpbetz/cellularautomata/apps/guardduty"
 	"log"
 	"os"
-	"fmt"
 )
 
 func main() {
@@ -20,9 +20,8 @@ func main() {
 	guardDutyMain()
 }
 
-
 func guardDutyMain() {
-	f, err := os.OpenFile("guardduty.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	f, err := os.OpenFile("guardduty.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		panic(fmt.Sprintf("error opening file: %v", err))
 	}
@@ -43,9 +42,9 @@ func guardDutyMain() {
 		for y := board.Bounds().Corner1.Y; y <= board.Bounds().Corner2.Y; y++ {
 			p := grid.Position{x, y}
 			board.Set(p, guardduty.Cell{
-				State: guardduty.Empty,
+				State:    guardduty.Empty,
 				Position: p,
-				Plane: board,
+				Plane:    board,
 			})
 		}
 	}

@@ -1,9 +1,9 @@
 package conway
 
 import (
-	"github.com/jpbetz/cellularautomata/io"
 	"github.com/jpbetz/cellularautomata/engine"
 	"github.com/jpbetz/cellularautomata/grid"
+	"github.com/jpbetz/cellularautomata/io"
 	"github.com/nsf/termbox-go"
 )
 
@@ -30,7 +30,6 @@ func (life Life) BgAttribute() termbox.Attribute {
 	return termbox.ColorDefault
 }
 
-
 type GameOfLife struct {
 	*engine.Engine
 }
@@ -56,13 +55,13 @@ func NewGameOfLife(plane grid.Plane, ui io.Renderer) *GameOfLife {
 }
 
 func (g *GameOfLife) initialize() {
-	example := [][]grid.Cell {
-		{Off, Off, Off, Off, Off, Off },
-		{Off, Off, Off, Off, Off, Off },
-		{Off, Off, Off, Alive, Off, Off },
-		{Off, Off, Off, Off, Alive, Off },
-		{Off, Off, Alive, Alive, Alive, Off },
-		{Off, Off, Off, Off, Off, Off },
+	example := [][]grid.Cell{
+		{Off, Off, Off, Off, Off, Off},
+		{Off, Off, Off, Off, Off, Off},
+		{Off, Off, Off, Alive, Off, Off},
+		{Off, Off, Off, Off, Alive, Off},
+		{Off, Off, Alive, Alive, Alive, Off},
+		{Off, Off, Off, Off, Off, Off},
 	}
 
 	for i := 0; i < 6; i++ {
@@ -77,7 +76,7 @@ func (g *GameOfLife) UpdateCell(plane grid.Plane, position grid.Position) []engi
 
 	bounds := plane.Bounds()
 	if !bounds.Contains(position) {
-		return []engine.CellUpdate {}
+		return []engine.CellUpdate{}
 	}
 
 	cell := asLife(plane.Get(position))
@@ -91,14 +90,14 @@ func (g *GameOfLife) UpdateCell(plane grid.Plane, position grid.Position) []engi
 	}
 	if cell.Alive {
 		if neighbors >= 2 && neighbors <= 3 {
-			return []engine.CellUpdate {{Alive, position}}
+			return []engine.CellUpdate{{Alive, position}}
 		} else {
-			return []engine.CellUpdate {{Off, position}}
+			return []engine.CellUpdate{{Off, position}}
 		}
 	} else if !cell.Alive && neighbors == 3 {
-		return []engine.CellUpdate {{Alive, position}}
+		return []engine.CellUpdate{{Alive, position}}
 	}
-	return []engine.CellUpdate {}
+	return []engine.CellUpdate{}
 }
 
 func (g *GameOfLife) Toggle(plane grid.Plane, position grid.Position) {

@@ -3,10 +3,7 @@ package grid
 import (
 	"container/heap"
 	"math"
-	"log"
 )
-
-// https://en.wikipedia.org/wiki/A*_search_algorithm
 
 type NodeId interface{}
 
@@ -61,36 +58,28 @@ func (pq *priorityQueue) Pop() interface{} {
 	return item
 }
 
-type nodeToPriorityQueueNodeMap map[NodeId]*priorityQueueNode
+type HeuristicCostEstimateFunc func(p1, p2 Node) float64
 
-type HuristicCostEstimateFunc func (p1, p2 Node) float64
+func FindPath(start, goal Node, estimateCost HeuristicCostEstimateFunc) (path *Path, ok bool) {
+	// https://en.wikipedia.org/wiki/A*_search_algorithm
 
-func FindPath(start, goal Node, estimateCost HuristicCostEstimateFunc) (*Path, bool) {
-	log.Printf("Finding path from %v to %v\n", start, goal)
 	closedSet := make(map[NodeId]bool)
-
-	openSet := make(nodeToPriorityQueueNodeMap)
-	open := make(priorityQueue, 0)
-	heap.Init(&open)
-
-	startCandidate := &priorityQueueNode{node: start, toGoalScoreViaCell: estimateCost(start, goal), fromStartScore: 0}
-	heap.Push(&open, startCandidate)
+	openSet := make(map[NodeId]*priorityQueueNode)
+	openQueue := make(priorityQueue, 0)
+	heap.Init(&openQueue)
+	startCandidate := &priorityQueueNode{
+		node:               start,
+		toGoalScoreViaCell: estimateCost(start, goal),
+		fromStartScore:     0,
+	}
+	heap.Push(&openQueue, startCandidate)
 	openSet[start.Id()] = startCandidate
+	cameFrom := make(map[NodeId]Node)
 
-	cameFrom := make(map[Node]Node)
-
-	for open.Len() > 0 {
-		current := heap.Pop(&open).(*priorityQueueNode)
+	for openQueue.Len() > 0 {
+		current := heap.Pop(&openQueue).(*priorityQueueNode)
 		if current.node == goal {
-			// build the Nodes
-			path := make([]Node, 1)
-			path[0] = current.node
-			var from, ok = cameFrom[current.node]
-			for ok {
-				path = append(path, from)
-				from, ok = cameFrom[from]
-			}
-			return &Path{path}, true
+			return buildPath(cameFrom, current.node), true
 		}
 		delete(openSet, current.node.Id())
 		closedSet[current.node.Id()] = true
@@ -107,17 +96,28 @@ func FindPath(start, goal Node, estimateCost HuristicCostEstimateFunc) (*Path, b
 						fromStartScore:     math.Inf(1),
 					}
 					openSet[neighborNode.Id()] = neighborCandidate
-					heap.Push(&open, neighborCandidate)
+					heap.Push(&openQueue, neighborCandidate)
 				} else if tentativeFromStartScore >= neighborCandidate.fromStartScore {
 					// not a better Node
 					continue
 				}
-				cameFrom[neighborNode] = current.node
+				cameFrom[neighborNode.Id()] = current.node
 				neighborCandidate.fromStartScore = tentativeFromStartScore
 				neighborCandidate.toGoalScoreViaCell = tentativeFromStartScore + estimateCost(neighborNode, goal)
-				heap.Fix(&open, neighborCandidate.index)
+				heap.Fix(&openQueue, neighborCandidate.index)
 			}
 		}
 	}
 	return nil, false
+}
+
+func buildPath(cameFrom map[NodeId]Node, current Node) *Path {
+	path := make([]Node, 1)
+	path[0] = current
+	var from, ok = cameFrom[current.Id()]
+	for ok {
+		path = append(path, from)
+		from, ok = cameFrom[from.Id()]
+	}
+	return &Path{path}
 }

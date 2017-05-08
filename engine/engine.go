@@ -1,14 +1,14 @@
 package engine
 
 import (
-	"github.com/jpbetz/cellularautomata/io"
-	"time"
-	"github.com/nsf/termbox-go"
 	"github.com/jpbetz/cellularautomata/grid"
+	"github.com/jpbetz/cellularautomata/io"
+	"github.com/nsf/termbox-go"
+	"time"
 )
 
 type CellUpdate struct {
-  	State grid.Cell
+	State    grid.Cell
 	Position grid.Position
 }
 
@@ -36,7 +36,7 @@ func (e *Engine) StartClock() *time.Ticker {
 
 func (e *Engine) clockEvent() {
 	w, h := termbox.Size()
-	changes := []CellUpdate {}
+	changes := []CellUpdate{}
 	for i := 0; i < w; i++ {
 		for j := 0; j < h; j++ {
 			updates := e.Handler.UpdateCell(e.Plane, grid.Position{X: i, Y: j})

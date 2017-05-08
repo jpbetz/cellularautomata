@@ -9,16 +9,19 @@ type InputEvent interface {
 type Click struct {
 	Position grid.Position
 }
+
 func (Click) EventName() string {
 	return "Click"
 }
 
-type Quit struct {}
+type Quit struct{}
+
 func (Quit) EventName() string {
 	return "Quit"
 }
 
-type Pause struct {}
+type Pause struct{}
+
 func (Pause) EventName() string {
 	return "Pause"
 }

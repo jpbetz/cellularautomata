@@ -1,10 +1,10 @@
 package wireworld
 
 import (
-	"github.com/nsf/termbox-go"
-	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/engine"
+	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
+	"github.com/nsf/termbox-go"
 )
 
 const ElectronHeadColor = termbox.ColorBlue
@@ -16,6 +16,7 @@ const ActiveRune = '█'
 const EmptyRune = ' '
 
 type State int
+
 const (
 	Empty State = iota
 	ElectronHead
@@ -84,16 +85,16 @@ var H = Cell{State: ElectronHead}
 var T = Cell{State: ElectronTail}
 
 func (g *Wireworld) initialize() {
-	example := [][]grid.Cell {
-		{O, C, C, T, H, C, C, C, C, O, O, O, O, O, O, O, O, O, O, O, O, O },
-		{C, O, O, O, O, O, O, O, O, C, C, C, C, C, C, O, O, O, O, O, O, O },
-		{O, C, H, T, C, C, C, C, C, O, O, O, O, O, O, C, O, O, O, O, O, O },
-		{O, O, O, O, O, O, O, O, O, O, O, O, O, O, C, C, C, C, O, O, O, O },
-		{O, O, O, O, O, O, O, O, O, O, O, O, O, O, C, O, O, C, C, C, C, C },
-		{O, O, O, O, O, O, O, O, O, O, O, O, O, O, C, C, C, C, O, O, O, O },
-		{O, C, C, C, C, C, C, C, C, O, O, O, O, O, O, C, O, O, O, O, O, O },
-		{C, O, O, O, O, O, O, O, O, T, C, C, C, C, C, O, O, O, O, O, O, O },
-		{O, C, H, T, C, C, C, C, H, O, O, O, O, O, O, O, O, O, O, O, O, O },
+	example := [][]grid.Cell{
+		{O, C, C, T, H, C, C, C, C, O, O, O, O, O, O, O, O, O, O, O, O, O},
+		{C, O, O, O, O, O, O, O, O, C, C, C, C, C, C, O, O, O, O, O, O, O},
+		{O, C, H, T, C, C, C, C, C, O, O, O, O, O, O, C, O, O, O, O, O, O},
+		{O, O, O, O, O, O, O, O, O, O, O, O, O, O, C, C, C, C, O, O, O, O},
+		{O, O, O, O, O, O, O, O, O, O, O, O, O, O, C, O, O, C, C, C, C, C},
+		{O, O, O, O, O, O, O, O, O, O, O, O, O, O, C, C, C, C, O, O, O, O},
+		{O, C, C, C, C, C, C, C, C, O, O, O, O, O, O, C, O, O, O, O, O, O},
+		{C, O, O, O, O, O, O, O, O, T, C, C, C, C, C, O, O, O, O, O, O, O},
+		{O, C, H, T, C, C, C, C, H, O, O, O, O, O, O, O, O, O, O, O, O, O},
 	}
 
 	for i := 0; i < len(example); i++ {
@@ -107,17 +108,17 @@ func (g *Wireworld) initialize() {
 func (g *Wireworld) UpdateCell(plane grid.Plane, position grid.Position) []engine.CellUpdate {
 
 	if !plane.Bounds().Contains(position) {
-		return []engine.CellUpdate {}
+		return []engine.CellUpdate{}
 	}
 
 	cell := asCell(plane.Get(position))
 	switch cell.State {
 	case ElectronHead:
 		cell.State = ElectronTail
-		return []engine.CellUpdate {{cell, position}}
+		return []engine.CellUpdate{{cell, position}}
 	case ElectronTail:
 		cell.State = Conductor
-		return []engine.CellUpdate {{cell, position}}
+		return []engine.CellUpdate{{cell, position}}
 	case Conductor:
 		neighboringElectronHeads := 0
 		for _, neighbor := range plane.GetNeighbors(position) {
@@ -127,12 +128,12 @@ func (g *Wireworld) UpdateCell(plane grid.Plane, position grid.Position) []engin
 		}
 		if neighboringElectronHeads > 0 && neighboringElectronHeads < 3 {
 			cell.State = ElectronHead
-			return []engine.CellUpdate {{cell, position}}
+			return []engine.CellUpdate{{cell, position}}
 		} else {
-			return []engine.CellUpdate {}
+			return []engine.CellUpdate{}
 		}
 	case Empty:
-		return []engine.CellUpdate {}
+		return []engine.CellUpdate{}
 	default:
 		panic("Unsupported State")
 	}

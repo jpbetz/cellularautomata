@@ -1,22 +1,22 @@
 package guardduty
 
 import (
-	"github.com/jpbetz/cellularautomata/grid"
-	"github.com/nsf/termbox-go"
-	"github.com/jpbetz/cellularautomata/engine"
-	"github.com/jpbetz/cellularautomata/io"
 	"fmt"
+	"github.com/jpbetz/cellularautomata/engine"
+	"github.com/jpbetz/cellularautomata/grid"
+	"github.com/jpbetz/cellularautomata/io"
+	"github.com/nsf/termbox-go"
 )
 
-type Unit interface {}
+type Unit interface{}
 
 type Waypoint struct {
 	position grid.Position
-	next *Waypoint
+	next     *Waypoint
 }
 
 type Guard struct {
-	nextWaypoint *Waypoint
+	nextWaypoint      *Waypoint
 	nextWaypointRoute *grid.Path
 }
 
@@ -28,10 +28,10 @@ const (
 )
 
 type Cell struct {
-	Plane grid.Plane
+	Plane    grid.Plane
 	Position grid.Position
-	Unit Unit
-	State CellState
+	Unit     Unit
+	State    CellState
 }
 
 type CellNeighbor struct {
@@ -116,11 +116,11 @@ func NewGuardDuty(plane grid.Plane, ui io.Renderer) *GuardDuty {
 	return game
 }
 
-var Waypoint1 = &Waypoint{ position: grid.Position{3, 0} }
-var Waypoint2 = &Waypoint{ position: grid.Position{3, 3} }
-var Waypoint3 = &Waypoint{ position: grid.Position{0, 0} }
+var Waypoint1 = &Waypoint{position: grid.Position{6, 1}}
+var Waypoint2 = &Waypoint{position: grid.Position{6, 6}}
+var Waypoint3 = &Waypoint{position: grid.Position{1, 1}}
 
-var Guard1 = &Guard {nextWaypoint: Waypoint1}
+var Guard1 = &Guard{nextWaypoint: Waypoint1}
 
 var O = Cell{State: Empty}
 var B = Cell{State: Barrier}
@@ -131,11 +131,15 @@ func (g *GuardDuty) initialize() {
 	Waypoint2.next = Waypoint3
 	Waypoint3.next = Waypoint1
 
-	example := [][]Cell {
-		{G, O, O, O},
-		{O, B, O, O},
-		{O, B, B, O},
-		{O, O, O, O},
+	example := [][]Cell{
+		{B, B, B, B, B, B, B, B},
+		{B, G, O, O, O, O, O, B},
+		{B, O, B, O, O, B, B, B},
+		{B, B, B, O, O, O, B, B},
+		{B, O, B, O, B, O, O, B},
+		{B, O, O, O, B, B, O, B},
+		{B, O, O, O, O, O, O, B},
+		{B, B, B, B, B, B, B, B},
 	}
 
 	for x := 0; x < len(example); x++ {
@@ -157,7 +161,7 @@ func (g *GuardDuty) initialize() {
 func (g *GuardDuty) UpdateCell(plane grid.Plane, position grid.Position) []engine.CellUpdate {
 
 	if !plane.Bounds().Contains(position) {
-		return []engine.CellUpdate {}
+		return []engine.CellUpdate{}
 	}
 
 	cell := asCell(plane.Get(position))
@@ -193,7 +197,7 @@ func (g *GuardDuty) UpdateCell(plane grid.Plane, position grid.Position) []engin
 			}
 		}
 	}
-	return []engine.CellUpdate {}
+	return []engine.CellUpdate{}
 }
 
 func costHuristic(p1, p2 grid.Node) float64 {

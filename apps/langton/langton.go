@@ -1,10 +1,10 @@
 package langton
 
 import (
-	"github.com/nsf/termbox-go"
-	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/engine"
+	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
+	"github.com/nsf/termbox-go"
 )
 
 const AntColor = termbox.ColorBlue
@@ -18,7 +18,7 @@ type Ant struct {
 
 type Square struct {
 	White bool
-	Ant *Ant
+	Ant   *Ant
 }
 
 func (s Square) Rune() rune {
@@ -78,14 +78,14 @@ func NewAnts(plane grid.Plane, ui io.Renderer) *Ants {
 
 func (g *Ants) initialize() {
 	w, h := termbox.Size()
-	g.Set(grid.Position{w/2, h/2}, AntStart)
+	g.Set(grid.Position{w / 2, h / 2}, AntStart)
 	g.UI.SetStatus("Langton's Ants")
 }
 
 func (g *Ants) UpdateCell(plane grid.Plane, position grid.Position) []engine.CellUpdate {
 
 	if !plane.Bounds().Contains(position) {
-		return []engine.CellUpdate {}
+		return []engine.CellUpdate{}
 	}
 
 	cell := asSquare(plane.Get(position))
@@ -102,14 +102,14 @@ func (g *Ants) UpdateCell(plane grid.Plane, position grid.Position) []engine.Cel
 
 		nextPosition := position.Translate(nextOrientation, 1)
 		if !plane.Bounds().Contains(nextPosition) {
-			return []engine.CellUpdate {}
+			return []engine.CellUpdate{}
 		}
 
 		nextCell := asSquare(plane.Get(nextPosition))
 		updatedNextCell := Square{Ant: &Ant{nextOrientation}, White: nextCell.White}
 
-		return []engine.CellUpdate {{updatedCell, position}, {updatedNextCell, nextPosition}}
+		return []engine.CellUpdate{{updatedCell, position}, {updatedNextCell, nextPosition}}
 	} else {
-		return []engine.CellUpdate {}
+		return []engine.CellUpdate{}
 	}
 }

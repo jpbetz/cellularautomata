@@ -1,16 +1,16 @@
 package termboxui
 
 import (
-	"github.com/nsf/termbox-go"
-	"github.com/jpbetz/cellularautomata/io"
 	"fmt"
-	"github.com/mattn/go-runewidth"
 	"github.com/jpbetz/cellularautomata/grid"
+	"github.com/jpbetz/cellularautomata/io"
+	"github.com/mattn/go-runewidth"
+	"github.com/nsf/termbox-go"
 )
 
 type TermboxUI struct {
 	// rendering internals
-  	backbuf []termbox.Cell
+	backbuf   []termbox.Cell
 	refreshCh chan bool
 
 	statusMessage string
@@ -33,8 +33,8 @@ func NewTermboxUI(input chan io.InputEvent) *TermboxUI {
 
 	return &TermboxUI{
 		refreshCh: make(chan bool, 5),
-		input: input,
-		backbuf: make([]termbox.Cell, w*h),
+		input:     input,
+		backbuf:   make([]termbox.Cell, w*h),
 	}
 }
 
@@ -62,11 +62,11 @@ func (ui *TermboxUI) reallocBackBuffer(w, h int) {
 
 func pos(x int, y int) int {
 	w, _ := termbox.Size()
-	return y * w + x
+	return y*w + x
 }
 
 func (ui *TermboxUI) Set(position grid.Position, cell grid.Cell) {
-	p := pos(position.X - ui.View.Offset.X, position.Y - ui.View.Offset.Y)
+	p := pos(position.X-ui.View.Offset.X, position.Y-ui.View.Offset.Y)
 
 	if p >= 0 && p < len(ui.backbuf) {
 		ui.backbuf[p] = termbox.Cell{Ch: cell.Rune(), Fg: cell.FgAttribute(), Bg: cell.BgAttribute()}
@@ -89,7 +89,7 @@ func (ui *TermboxUI) handleInput() {
 			}
 		case termbox.EventMouse:
 			if ev.Key == termbox.MouseLeft {
-				ui.input <- io.Click {Position: grid.Position{ev.MouseX, ev.MouseY}}
+				ui.input <- io.Click{Position: grid.Position{ev.MouseX, ev.MouseY}}
 				ui.Draw()
 			}
 		case termbox.EventResize:
@@ -132,8 +132,8 @@ func (ui *TermboxUI) refresh() {
 
 func (ui *TermboxUI) refreshPowerline() {
 	_, h := termbox.Size()
-	inputLine := h-1
-	powerline := h-2
+	inputLine := h - 1
+	powerline := h - 2
 	ui.writeScreenline(0, powerline, termbox.ColorBlack, termbox.ColorBlue, ui.statusMessage)
 	ui.writeScreenline(0, inputLine, termbox.ColorBlue, termbox.ColorBlack, "")
 }

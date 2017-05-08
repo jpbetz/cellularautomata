@@ -8,7 +8,7 @@ import (
 type Plane interface {
 	Get(position Position) Cell
 	GetNeighborPositions(p Position) []Position
-  	GetNeighbors(p Position) []Cell
+	GetNeighbors(p Position) []Cell
 	Set(position Position, cell Cell)
 	Bounds() Rectangle
 }
@@ -63,7 +63,7 @@ var Origin = Position{0, 0}
 
 type Rectangle struct {
 	Corner1 Position
-  	Corner2 Position
+	Corner2 Position
 }
 
 func (r Rectangle) Contains(position Position) bool {

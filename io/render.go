@@ -11,6 +11,6 @@ type Renderer interface {
 }
 
 type View struct {
-	Plane grid.Plane
+	Plane  grid.Plane
 	Offset grid.Position
 }
