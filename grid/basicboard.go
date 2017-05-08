@@ -1,6 +1,9 @@
 package grid
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 type BasicBoard struct {
 	Cells []Cell
@@ -42,6 +45,7 @@ func (b *BasicBoard) GetNeighborPositions(p Position) []Position {
 			}
 		}
 	}
+	log.Printf("GetNeighborPositions %v: %v", p, neighbors)
 	return neighbors
 }
 

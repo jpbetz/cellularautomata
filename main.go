@@ -8,6 +8,9 @@ import (
 	"github.com/jpbetz/cellularautomata/apps/conway"
 	"github.com/jpbetz/cellularautomata/apps/wireworld"
 	"github.com/jpbetz/cellularautomata/apps/guardduty"
+	"log"
+	"os"
+	"fmt"
 )
 
 func main() {
@@ -19,6 +22,13 @@ func main() {
 
 
 func guardDutyMain() {
+	f, err := os.OpenFile("guardduty.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	if err != nil {
+		panic(fmt.Sprintf("error opening file: %v", err))
+	}
+	defer f.Close()
+
+	log.SetOutput(f)
 	input := make(chan io.InputEvent, 100)
 
 	ui := termboxui.NewTermboxUI(input)
@@ -29,14 +39,14 @@ func guardDutyMain() {
 	view := &io.View{Plane: board, Offset: grid.Origin}
 	ui.SetView(view)
 
-	for x := 0; x < board.W; x++ {
-		for y := 0; y < board.H; y++ {
-			i := x + board.W * y
-			board.Cells[i] = guardduty.Cell{
+	for x := board.Bounds().Corner1.X; x <= board.Bounds().Corner2.X; x++ {
+		for y := board.Bounds().Corner1.Y; y <= board.Bounds().Corner2.Y; y++ {
+			p := grid.Position{x, y}
+			board.Set(p, guardduty.Cell{
 				State: guardduty.Empty,
-				Position: grid.Position {X:x, Y:y},
+				Position: p,
 				Plane: board,
-			}
+			})
 		}
 	}
 

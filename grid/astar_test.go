@@ -23,6 +23,9 @@ type TestNode struct {
 	Neighbors []*TestNode
 }
 
+func (n TestNode) Id() NodeId {
+	return n.Position
+}
 
 func (n TestNode) GetNeighbors() []Neighbor {
 	results := make([]Neighbor, 0, len(n.Neighbors))
@@ -154,6 +157,58 @@ func TestGrid(t *testing.T) {
 		for i, n := range route {
 			if n.(*TestNode).Position != expected[i] {
 				t.Error(fmt.Sprintf("Expected path[%d] to be %v but found %v", i, expected[i], n.(*TestNode).Position))
+			}
+		}
+	}
+}
+
+func TestShortLong(t *testing.T) {
+	start, goal := toNodes([][]NodeType{
+		{S, O, O, O},
+		{O, B, B, O},
+		{G, B, B, O},
+		{O, B, B, O},
+		{O, O, O, O},
+	})
+
+	path, ok := FindPath(start, goal, distance)
+	if !ok {
+		t.Error("Expected FindPath to return ok=true, but got ok=false.")
+	} else {
+		expected := []Position {
+			{2, 0},
+			{1, 0},
+			{0, 0},
+		}
+		route := path.Nodes
+		for i, n := range route {
+			if n.(*TestNode).Position != expected[i] {
+				t.Error(fmt.Sprintf("Expected path[%d] to be %v but found %v. Actual path: %#v", i, expected[i], n.(*TestNode).Position, route))
+			}
+		}
+	}
+}
+
+func TestAngle(t *testing.T) {
+	start, goal := toNodes([][]NodeType{
+		{S, O, O},
+		{O, O, O},
+		{O, O, G},
+	})
+
+	path, ok := FindPath(start, goal, distance)
+	if !ok {
+		t.Error("Expected FindPath to return ok=true, but got ok=false.")
+	} else {
+		expected := []Position {
+			{2, 2},
+			{1, 1},
+			{0, 0},
+		}
+		route := path.Nodes
+		for i, n := range route {
+			if n.(*TestNode).Position != expected[i] {
+				t.Error(fmt.Sprintf("Expected path[%d] to be %v but found %v. Actual path: %#v", i, expected[i], n.(*TestNode).Position, route))
 			}
 		}
 	}

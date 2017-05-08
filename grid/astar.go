@@ -3,9 +3,16 @@ package grid
 import (
 	"container/heap"
 	"math"
+	"log"
+	"fmt"
 )
 
+// https://en.wikipedia.org/wiki/A*_search_algorithm
+
+type NodeId interface{}
+
 type Node interface {
+	Id() NodeId
 	GetNeighbors() []Neighbor
 }
 
@@ -55,20 +62,13 @@ func (pq *priorityQueue) Pop() interface{} {
 	return item
 }
 
-type nodeToPriorityQueueNodeMap map[Node]*priorityQueueNode
-
-func (d nodeToPriorityQueueNodeMap) GetFromStartOrInf(key Node) (result float64) {
-	if v, ok := d[key]; ok {
-		return v.fromStartScore
-	} else {
-		return math.Inf(1)
-	}
-}
+type nodeToPriorityQueueNodeMap map[NodeId]*priorityQueueNode
 
 type HuristicCostEstimateFunc func (p1, p2 Node) float64
 
 func FindPath(start, goal Node, estimateCost HuristicCostEstimateFunc) (*Path, bool) {
-	closedSet := make(map[Node]bool)
+	log.Printf("Finding path from %v to %v\n", start, goal)
+	closedSet := make(map[NodeId]bool)
 
 	openSet := make(nodeToPriorityQueueNodeMap)
 	open := make(priorityQueue, 0)
@@ -76,12 +76,13 @@ func FindPath(start, goal Node, estimateCost HuristicCostEstimateFunc) (*Path, b
 
 	startCandidate := &priorityQueueNode{node: start, toGoalScoreViaCell: estimateCost(start, goal), fromStartScore: 0}
 	heap.Push(&open, startCandidate)
-	openSet[start] = startCandidate
+	openSet[start.Id()] = startCandidate
 
 	cameFrom := make(map[Node]Node)
 
 	for open.Len() > 0 {
 		current := heap.Pop(&open).(*priorityQueueNode)
+		log.Printf("Visiting: %v\n", current)
 		if current.node == goal {
 			// build the Nodes
 			path := make([]Node, 1)
@@ -93,30 +94,31 @@ func FindPath(start, goal Node, estimateCost HuristicCostEstimateFunc) (*Path, b
 			}
 			return &Path{path}, true
 		}
-		delete(openSet, current.node)
-		closedSet[current.node] = true
+		delete(openSet, current.node.Id())
+		closedSet[current.node.Id()] = true
 		for _, neighbor := range current.node.GetNeighbors() {
 			neighborNode := neighbor.GetNode()
-			if closedSet[neighborNode] != true {
-				tentativeFromStartScore := openSet.GetFromStartOrInf(current.node) + neighbor.GetDistance()
+			if closedSet[neighborNode.Id()] != true {
+				tentativeFromStartScore := current.fromStartScore + neighbor.GetDistance()
 
-				var neighborCandidate, ok = openSet[neighborNode]
+				var neighborCandidate, ok = openSet[neighborNode.Id()]
 				if !ok {
 					neighborCandidate = &priorityQueueNode{
 						node:               neighborNode,
 						toGoalScoreViaCell: math.Inf(1),
 						fromStartScore:     math.Inf(1),
 					}
-					openSet[neighborNode] = neighborCandidate
+					openSet[neighborNode.Id()] = neighborCandidate
 					heap.Push(&open, neighborCandidate)
 				} else if tentativeFromStartScore >= neighborCandidate.fromStartScore {
-					// not a better Nodes
+					// not a better Node
 					continue
 				}
 				cameFrom[neighborNode] = current.node
 				neighborCandidate.fromStartScore = tentativeFromStartScore
 				neighborCandidate.toGoalScoreViaCell = tentativeFromStartScore + estimateCost(neighborNode, goal)
 				heap.Fix(&open, neighborCandidate.index)
+				log.Printf(fmt.Sprintf("Setting PQ entry %v for %#v, tenatativeStartScore: %v", neighborCandidate.index, neighborCandidate, tentativeFromStartScore))
 			}
 		}
 	}

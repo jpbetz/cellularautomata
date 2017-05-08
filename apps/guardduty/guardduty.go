@@ -46,6 +46,10 @@ func (c CellNeighbor) GetDistance() float64 {
 	return 1
 }
 
+func (s Cell) Id() grid.NodeId {
+	return s.Position
+}
+
 func (s Cell) GetNeighbors() []grid.Neighbor {
 	if s.Plane == nil {
 		panic("Cell has no plane.")
@@ -54,7 +58,7 @@ func (s Cell) GetNeighbors() []grid.Neighbor {
 	results := make([]grid.Neighbor, 0, len(neighbors))
 	for _, neighbor := range neighbors {
 		neighborCell := asCell(neighbor)
-		if neighborCell.State != Barrier /*&& (neighborCell.Position.X == s.Position.X || neighborCell.Position.Y == s.Position.Y)*/ {
+		if neighborCell.State != Barrier && (neighborCell.Position.X == s.Position.X || neighborCell.Position.Y == s.Position.Y) {
 			results = append(results, CellNeighbor{neighborCell})
 		}
 	}
@@ -125,18 +129,23 @@ func (g *GuardDuty) initialize() {
 	Waypoint1.next = Waypoint2
 	Waypoint2.next = Waypoint1
 
-	example := [][]grid.Cell {
+	example := [][]Cell {
 		{G, O, O},
 		{O, O, O},
 		{O, O, O},
 	}
 
-	for i := 0; i < len(example); i++ {
-		for j := 0; j < len(example[0]); j++ {
-			cell := example[i][j].(Cell)
-			cell.Position = grid.Position {i, j}
-			cell.Plane = g.Plane
-			g.Set(grid.Position{j, i}, cell)
+	for x := 0; x < len(example); x++ {
+		for y := 0; y < len(example[x]); y++ {
+			example := example[x][y]
+			p := grid.Position{x, y}
+			current := asCell(g.Plane.Get(p))
+			current.State = example.State
+			current.Unit = example.Unit
+			if p != current.Position {
+				panic("p != current.Position")
+			}
+			g.Set(p, current)
 		}
 	}
 	g.UI.SetStatus("GuardDuty")
@@ -154,8 +163,10 @@ func (g *GuardDuty) UpdateCell(plane grid.Plane, position grid.Position) []engin
 		case *Guard:
 			guard := cell.Unit.(*Guard)
 			if guard.nextWaypointRoute == nil && guard.nextWaypoint != nil {
+				g.UI.SetStatus(fmt.Sprintf("Next Waypoint: %v", guard.nextWaypoint.position))
 				path, ok := findPath(cell, asCell(plane.Get(guard.nextWaypoint.position)))
-				g.UI.SetStatus(fmt.Sprintf("Found new path: ok=%v, path=%v", ok, path))
+				//g.UI.SetStatus(fmt.Sprintf("Found new path: ok=%v, path=%v", ok, path))
+				//log.Printf("Found new path: ok=%v, path=%v", ok, path)
 				if ok {
 					guard.nextWaypointRoute = path
 				}
@@ -171,7 +182,8 @@ func (g *GuardDuty) UpdateCell(plane grid.Plane, position grid.Position) []engin
 					nextCell := asCell(plane.Get(nextPosition))
 					nextCell.Unit = cell.Unit
 					cell.Unit = nil
-					//g.UI.SetStatus(fmt.Sprintf("Movingalong path from %v to %v", cell.Position, nextPosition))
+					//g.UI.SetStatus(fmt.Sprintf("Moving along path from %v to %v", cell.Position, nextPosition))
+					//g.UI.SetStatus(fmt.Sprintf("Moving along path from %v to %v", cell.Position, nextPosition))
 					return []engine.CellUpdate{
 						{cell, cell.Position},
 						{nextCell, nextCell.Position},
