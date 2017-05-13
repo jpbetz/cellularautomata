@@ -56,11 +56,19 @@ func guardDutyMain() {
 	for {
 		select {
 		case in := <-input:
-			switch in.(type) {
+			switch event := in.(type) {
 			case io.Quit:
 				return
 			case io.Click:
-
+				cell := board.Get(event.Position).(guardduty.Cell)
+				if cell.State == guardduty.Barrier {
+					cell.State = guardduty.Empty
+				} else {
+					cell.State = guardduty.Barrier
+				}
+				board.Set(event.Position, cell)
+				game.UI.Set(event.Position, cell)
+				ui.Draw()
 			case io.Pause:
 				if game.Playing {
 					eventClock.Stop()
@@ -164,11 +172,11 @@ func conwayMain() {
 	for {
 		select {
 		case in := <-input:
-			switch in.(type) {
+			switch event := in.(type) {
 			case io.Quit:
 				return
 			case io.Click:
-				game.Toggle(game.Plane, in.(io.Click).Position)
+				game.Toggle(game.Plane, event.Position)
 				ui.Draw()
 			case io.Pause:
 				if game.Playing {

@@ -166,9 +166,9 @@ func (g *GuardDuty) UpdateCell(plane grid.Plane, position grid.Position) []engin
 
 	cell := asCell(plane.Get(position))
 	if cell.Unit != nil {
-		switch cell.Unit.(type) {
+		switch unit := cell.Unit.(type) {
 		case *Guard:
-			guard := cell.Unit.(*Guard)
+			guard := unit
 			if guard.nextWaypointRoute == nil && guard.nextWaypoint != nil {
 				g.UI.SetStatus(fmt.Sprintf("Next Waypoint: %v", guard.nextWaypoint.position))
 				path, ok := findPath(cell, asCell(plane.Get(guard.nextWaypoint.position)))
@@ -183,11 +183,16 @@ func (g *GuardDuty) UpdateCell(plane grid.Plane, position grid.Position) []engin
 					tail, guard.nextWaypointRoute.Nodes = route[len(route)-1], route[:len(route)-1]
 					nextPosition := tail.(Cell).Position
 					nextCell := asCell(plane.Get(nextPosition))
-					nextCell.Unit = cell.Unit
-					cell.Unit = nil
-					return []engine.CellUpdate{
-						{cell, cell.Position},
-						{nextCell, nextCell.Position},
+
+					if nextCell.State == Barrier {
+						guard.nextWaypointRoute = nil
+					} else {
+						nextCell.Unit = cell.Unit
+						cell.Unit = nil
+						return []engine.CellUpdate{
+							{cell, cell.Position},
+							{nextCell, nextCell.Position},
+						}
 					}
 				} else {
 					guard.nextWaypointRoute = nil
