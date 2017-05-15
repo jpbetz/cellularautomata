@@ -3,8 +3,8 @@ package engine
 import (
 	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
-	"github.com/nsf/termbox-go"
 	"time"
+	"fmt"
 )
 
 type CellUpdate struct {
@@ -24,21 +24,27 @@ type Engine struct {
 }
 
 func (e *Engine) StartClock() *time.Ticker {
+	fmt.Print("Starting event clock\n")
 	eventClock := time.NewTicker(time.Millisecond * 500)
 	go func() {
 		for range eventClock.C {
 			e.clockEvent()
-			e.UI.Draw()
 		}
 	}()
+	fmt.Print("Event clock started\n")
 	return eventClock
 }
 
 func (e *Engine) clockEvent() {
-	w, h := termbox.Size()
+	//w, h := termbox.Size()
+	//bounds := grid.Rectangle{
+	//  grid.Position {0,0},
+	//  grid.Position {e.UI.(*sdlui.SdlUi).Width,e.UI.(*sdlui.SdlUi).Height},
+	//}
+	bounds := e.Plane.Bounds()
 	changes := []CellUpdate{}
-	for i := 0; i < w; i++ {
-		for j := 0; j < h; j++ {
+	for i := bounds.Corner1.X; i < bounds.Corner2.X; i++ {
+		for j := bounds.Corner1.Y; j < bounds.Corner2.Y; j++ {
 			updates := e.Handler.UpdateCell(e.Plane, grid.Position{X: i, Y: j})
 			for _, update := range updates {
 				changes = append(changes, update)

@@ -159,7 +159,6 @@ func (g *GuardDuty) initialize() {
 }
 
 func (g *GuardDuty) UpdateCell(plane grid.Plane, position grid.Position) []engine.CellUpdate {
-
 	if !plane.Bounds().Contains(position) {
 		return []engine.CellUpdate{}
 	}

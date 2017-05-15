@@ -11,13 +11,20 @@ import (
 	"github.com/jpbetz/cellularautomata/termboxui"
 	"log"
 	"os"
+	"github.com/jpbetz/cellularautomata/sdlui"
+	"runtime"
 )
+
+// Arrange that main.main runs on main thread.
+func init() {
+	runtime.LockOSThread()
+}
 
 func main() {
 	//conwayMain()
 	//langtonMain()
-	//wireworldMain()
-	guardDutyMain()
+	wireworldMain()
+	//guardDutyMain()
 }
 
 func guardDutyMain() {
@@ -30,7 +37,7 @@ func guardDutyMain() {
 	log.SetOutput(f)
 	input := make(chan io.InputEvent, 100)
 
-	ui := termboxui.NewTermboxUI(input)
+	ui := sdlui.NewSdlUi(input)
 	defer ui.Close()
 	ui.Run()
 
@@ -53,39 +60,49 @@ func guardDutyMain() {
 	eventClock := game.StartClock()
 	game.Playing = true
 
-	for {
-		select {
-		case in := <-input:
-			switch event := in.(type) {
-			case io.Quit:
-				return
-			case io.Click:
-				cell := board.Get(event.Position).(guardduty.Cell)
-				if cell.State == guardduty.Barrier {
-					cell.State = guardduty.Empty
-				} else {
-					cell.State = guardduty.Barrier
-				}
-				board.Set(event.Position, cell)
-				game.UI.Set(event.Position, cell)
-				ui.Draw()
-			case io.Pause:
-				if game.Playing {
-					eventClock.Stop()
-					game.Playing = false
-				} else {
-					eventClock = game.StartClock()
-					game.Playing = true
+	done := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case in := <-input:
+				switch event := in.(type) {
+				case io.Quit:
+					done <- true
+					return
+				case io.Click:
+					cell := board.Get(event.Position).(guardduty.Cell)
+					if cell.State == guardduty.Barrier {
+						cell.State = guardduty.Empty
+					} else {
+						cell.State = guardduty.Barrier
+					}
+					board.Set(event.Position, cell)
+					game.UI.Set(event.Position, cell)
+					game.UI.Draw()
+				case io.Pause:
+					if game.Playing {
+						eventClock.Stop()
+						game.Playing = false
+					} else {
+						eventClock = game.StartClock()
+						game.Playing = true
+					}
 				}
 			}
 		}
-	}
+	}()
+
+	// main thread game loop
+	ui.Loop(done)
 }
 
 func wireworldMain() {
 	input := make(chan io.InputEvent, 100)
 
-	ui := termboxui.NewTermboxUI(input)
+	//ui := termboxui.NewTermboxUI(input)
+	ui := sdlui.NewSdlUi(input)
+	done := make(chan bool)
 	defer ui.Close()
 	ui.Run()
 
@@ -97,25 +114,29 @@ func wireworldMain() {
 	eventClock := game.StartClock()
 	game.Playing = true
 
-	for {
-		select {
-		case in := <-input:
-			switch in.(type) {
-			case io.Quit:
-				return
-			case io.Click:
+	go func() {
+		for {
+			select {
+			case in := <-input:
+				switch in.(type) {
+				case io.Quit:
+					return
+				case io.Click:
 
-			case io.Pause:
-				if game.Playing {
-					eventClock.Stop()
-					game.Playing = false
-				} else {
-					eventClock = game.StartClock()
-					game.Playing = true
+				case io.Pause:
+					if game.Playing {
+						eventClock.Stop()
+						game.Playing = false
+					} else {
+						eventClock = game.StartClock()
+						game.Playing = true
+					}
 				}
 			}
 		}
-	}
+	}()
+
+	ui.Loop(done)
 }
 
 func langtonMain() {
