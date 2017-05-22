@@ -25,3 +25,9 @@ type Pause struct{}
 func (Pause) EventName() string {
 	return "Pause"
 }
+
+type Save struct{}
+
+func (Save) EventName() string {
+	return "Save"
+}

@@ -9,8 +9,10 @@ import (
 	"os"
 	"log"
 	"time"
+	"github.com/jpbetz/cellularautomata/flatbuffers/region"
+	"io/ioutil"
+	"github.com/google/flatbuffers/go"
 )
-
 
 type GuardDutyCommand struct {
 	UI io.Renderer
@@ -29,14 +31,13 @@ func (c *GuardDutyCommand) Synopsis() string {
 	return "Guard Duty"
 }
 
-
 func guardDutyMain(ui io.Renderer) {
 	f := setupLogging("logs/guardduty.log")
 	defer f.Close()
 
 	ui.Run()
 
-	board := grid.NewBasicBoard(100, 100)
+	board := grid.NewBasicBoard(40, 40)
 	view := &io.View{Plane: board, Offset: grid.Origin}
 	ui.SetView(view)
 
@@ -80,6 +81,13 @@ func guardDutyMain(ui io.Renderer) {
 					eventClock = game.StartClock()
 					game.Playing = true
 				}
+			case io.Save:
+				log.Printf("Writing log file: %s\n", dataFile)
+				buf := game.Save(board.Cells, board.W, board.H)
+				if err := ioutil.WriteFile(dataFile, buf, 0664); err != nil {
+					log.Printf("Failed to write file %v\n", err)
+				}
+				log.Printf("Wrote log file: %s\n", dataFile)
 			}
 		}
 	}()
@@ -215,26 +223,35 @@ var O = Cell{State: Empty}
 var B = Cell{State: Barrier}
 var G = Cell{State: Empty, Unit: Guard1}
 
+var dataFile = "data/guardduty/defaultsave.dat"
+
 func (g *GuardDuty) initialize() {
 	Waypoint1.next = Waypoint2
 	Waypoint2.next = Waypoint3
 	Waypoint3.next = Waypoint1
 
-	example := [][]Cell{
-		{B, B, B, B, B, B, B, B},
-		{B, G, O, O, O, O, O, B},
-		{B, O, B, O, O, B, B, B},
-		{B, B, B, O, O, O, B, B},
-		{B, O, B, O, B, O, O, B},
-		{B, O, O, O, B, B, O, B},
-		{B, O, O, O, O, O, O, B},
-		{B, B, B, B, B, B, B, B},
+	buf, err := ioutil.ReadFile(dataFile)
+	var example []Cell
+	var w = 8
+	var h = 8
+	if err != nil {
+		example = []Cell{
+			B, B, B, B, B, B, B, B,
+			B, G, O, O, O, O, O, B,
+			B, O, B, O, O, B, B, B,
+			B, B, B, O, O, O, B, B,
+			B, O, B, O, B, O, O, B,
+			B, O, O, O, B, B, O, B,
+			B, O, O, O, O, O, O, B,
+			B, B, B, B, B, B, B, B,
+		}
+	} else {
+		example, w, h = g.Load(buf)
 	}
 
-	for x := 0; x < len(example); x++ {
-		for y := 0; y < len(example[x]); y++ {
-			example := example[x][y]
-			p := grid.Position{x, y}
+	for i := 0; i < len(example); i++ {
+			example := example[i]
+			p := grid.Position{i % w , i / w}
 			current := asCell(g.Plane.Get(p))
 			current.State = example.State
 			current.Unit = example.Unit
@@ -242,9 +259,143 @@ func (g *GuardDuty) initialize() {
 				panic("p != current.Position")
 			}
 			g.Set(p, current)
+	}
+	g.UI.SetStatus(fmt.Sprintf("GuardDuty (%d, %d)", w, h))
+}
+
+func (g *GuardDuty) Load(buf []byte) ([]Cell, int, int) {
+	basicBoard := region.GetRootAsBasicBoard(buf, 0)
+	log.Print("Loaded board\n")
+	plane := basicBoard.Plane(&region.Plane{})
+
+	planeW, planeH := int(plane.W()), int(plane.H())
+	log.Printf("Loaded plane (w: %d, h: %d, total tiles: %d)\n", planeH, planeW, plane.TilesLength())
+
+	cells := make([]Cell, plane.TilesLength())
+	for i := 0; i < plane.TilesLength(); i++ {
+			tile := &region.Tile{}
+			plane.Tiles(tile, i)
+			//log.Printf("Loaded tile at %d (%d, %d), type: %d\n", i, (i % planeW), (i / planeW), tile.TileType())
+			if int(tile.TileType()) == region.TileTypeBarrier {
+				cells[i] = B
+			} else {
+				cells[i] = O
+			}
+	}
+	log.Printf("Loaded %d tiles\n", plane.TilesLength())
+
+	guard := &region.GuardUnit{}
+	basicBoard.Guard(guard)
+	guardPosition := &region.Position{}
+	guard.Position(guardPosition)
+	log.Printf("Loaded guard at (%d, %d)\n", guardPosition.X(), guardPosition.Y())
+	waypoints := make([]*Waypoint, guard.WaypointsLength())
+	for i := 0; i < guard.WaypointsLength(); i++ {
+		position := &region.Position{}
+		guard.Waypoints(position, i)
+		log.Printf("Loaded waypoint at (%d, %d)\n", position.X(), position.Y())
+		waypoint := &Waypoint{
+			position: grid.Position{int(position.X()), int(position.Y())},
+		}
+		if i > 0 {
+			waypoints[i-1].next = waypoint
+		}
+		if i == guard.WaypointsLength() - 1 {
+			waypoint.next = waypoints[0]
+		}
+		waypoints[i] = waypoint
+	}
+	log.Printf("Loaded waypoints: %#v\n", waypoints)
+
+	guardIdx := int(guardPosition.X()) + (planeW * int(guardPosition.Y()))
+	log.Printf("Loading guard at idx: %d, x,y = %d, %d", guardIdx, guardPosition.X(), guardPosition.Y())
+	cells[guardIdx] = Cell {
+		State: Empty,
+		Unit: &Guard{nextWaypoint: waypoints[0]},
+	}
+	return cells, planeW, planeH
+}
+
+
+func (g *GuardDuty) Save(cells []grid.Cell, w, h int) []byte {
+	builder := flatbuffers.NewBuilder(0)
+
+	// tiles
+	log.Printf("Saving %d cells", len(cells))
+	tileEnds := make([]flatbuffers.UOffsetT, len(cells))
+	var guard *Guard
+	var guardPosition grid.Position
+	for i, gridCell := range cells {
+		cell := gridCell.(Cell)
+		var state int
+		if cell.State == Barrier {
+			state = region.TileTypeBarrier
+		} else {
+			state = region.TileTypeEmpty
+		}
+		region.TileStart(builder)
+		region.TileAddTileType(builder, int32(state))
+		tileEnds[i] = region.TileEnd(builder)
+		var ok bool
+		if cell.Unit != nil {
+			guard, ok = cell.Unit.(*Guard)
+			if !ok {
+				panic(fmt.Sprintf("Failed to convert cell unit to guard: %v", cell.Unit))
+			}
+			guardPosition = cell.Position
 		}
 	}
-	g.UI.SetStatus("GuardDuty")
+
+	// plane tiles vector
+	log.Printf("Writing %d tiles", len(tileEnds))
+	region.PlaneStartTilesVector(builder, len(tileEnds))
+	for i := len(tileEnds)-1; i >= 0; i-- {
+		builder.PrependUOffsetT(tileEnds[i])
+	}
+	tilesVectorEnd := builder.EndVector(len(tileEnds))
+
+	// plane
+	region.PlaneStart(builder)
+	region.PlaneAddW(builder, int32(w))
+	region.PlaneAddH(builder, int32(h))
+	region.PlaneAddTiles(builder, tilesVectorEnd)
+	planeEnd := region.PlaneEnd(builder)
+
+	// waypoint positions
+	start := guard.nextWaypoint
+
+	waypoints := make([]grid.Position, 0)
+	current := start
+	for ; current.next != start; current = current.next {
+		waypoints = append(waypoints, current.position)
+	}
+	waypoints = append(waypoints, current.position)
+
+	// waypoint positions vector
+	region.GuardUnitStartWaypointsVector(builder, len(waypoints))
+	for i := len(waypoints) - 1; i >= 0; i-- {
+		log.Printf("Writing waypoint %d (%d, %d)", i, int32(waypoints[i].X), int32(waypoints[i].Y))
+		region.CreatePosition(builder, int32(waypoints[i].X), int32(waypoints[i].Y))
+	}
+	waypointsVectorEnd := builder.EndVector(len(waypoints))
+
+	// guard unit
+	log.Printf("Writing guard position (%d, %d)", int32(guardPosition.X), int32(guardPosition.Y))
+	guardUnitPosition := region.CreatePosition(builder, int32(guardPosition.X), int32(guardPosition.Y))
+
+	region.GuardUnitStart(builder)
+	region.GuardUnitAddPosition(builder, guardUnitPosition)
+	region.GuardUnitAddWaypoints(builder, waypointsVectorEnd)
+	guardEnd := region.GuardUnitEnd(builder)
+
+	// basic board
+	region.BasicBoardStart(builder)
+	region.BasicBoardAddPlane(builder, planeEnd)
+	region.BasicBoardAddGuard(builder, guardEnd)
+	basicBoardEnd := region.BasicBoardEnd(builder)
+
+	builder.Finish(basicBoardEnd)
+	return builder.Bytes[builder.Head():]
 }
 
 func (g *GuardDuty) UpdateCell(plane grid.Plane, position grid.Position) []engine.CellUpdate {

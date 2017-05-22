@@ -1,0 +1,38 @@
+namespace flatbuffers.region;
+
+// Vectors of Unions are not yet supported for Go..
+//union Unit { GuardUnit }
+
+struct Position {
+  x: int;
+  y: int;
+}
+
+table GuardUnit {
+  position: Position;
+  waypoints: [Position];
+}
+
+enum TileType: int {
+  Empty = 0,
+  Barrier = 1
+}
+
+table Tile {
+  tileType: TileType;
+}
+
+table Plane {
+  w: int;
+  h: int;
+  tiles: [Tile];
+}
+
+table Region {
+  planes: [Plane];
+}
+
+table BasicBoard {
+  guard: GuardUnit;
+  plane: Plane;
+}
