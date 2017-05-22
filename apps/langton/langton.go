@@ -28,7 +28,7 @@ func (c *LangtonCommand) Synopsis() string {
 }
 
 func langtonMain(ui io.Renderer) {
-	f := setupLogging("log")
+	f := setupLogging("logs/langton.log")
 	defer f.Close()
 
 	ui.Run()
@@ -94,13 +94,13 @@ func (s Square) Rune() rune {
 	if s.Ant != nil {
 		switch s.Ant.orientation {
 		case grid.Up:
-			return ''
+			return '^'
 		case grid.Down:
-			return ''
+			return '_'
 		case grid.Left:
-			return ''
+			return '<'
 		case grid.Right:
-			return ''
+			return '>'
 		default:
 			panic("Unsupported Orientation value")
 		}
@@ -110,7 +110,13 @@ func (s Square) Rune() rune {
 }
 
 func (s Square) FgAttribute() termbox.Attribute {
-	return AntColor
+	if s.Ant != nil {
+		return AntColor
+	} else if s.White {
+		return White
+	} else {
+		return Black
+	}
 }
 
 func (s Square) BgAttribute() termbox.Attribute {
@@ -146,8 +152,9 @@ func NewAnts(plane grid.Plane, ui io.Renderer) *Ants {
 }
 
 func (g *Ants) initialize() {
-	w, h := termbox.Size()
-	g.Set(grid.Position{w / 2, h / 2}, AntStart)
+	position := grid.Position{20, 20}
+	log.Printf("initializing ant at %d, %d\n", position.X, position.Y)
+	g.Set(position, AntStart)
 	g.UI.SetStatus("Langton's Ants")
 }
 

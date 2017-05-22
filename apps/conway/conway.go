@@ -31,7 +31,7 @@ func (c *ConwayCommand) Synopsis() string {
 }
 
 func conwayMain(ui io.Renderer) {
-	f := setupLogging("conway.log")
+	f := setupLogging("logs/conway.log")
 	defer f.Close()
 
 	ui.Run()
@@ -54,8 +54,11 @@ func conwayMain(ui io.Renderer) {
 				done <- true
 				return
 			case io.Click:
-				game.Toggle(game.Plane, event.Position)
-				ui.Draw()
+				cell := game.Toggle(game.Plane, event.Position)
+				if cell != nil {
+					ui.Set(event.Position, cell)
+					ui.Draw()
+				}
 			case io.Pause:
 				if game.Playing {
 					eventClock.Stop()
@@ -94,7 +97,11 @@ func (life Life) Rune() rune {
 }
 
 func (life Life) FgAttribute() termbox.Attribute {
-	return termbox.ColorBlue
+	if life.Alive {
+		return termbox.ColorBlue
+	} else {
+		return termbox.ColorDefault
+	}
 }
 
 func (life Life) BgAttribute() termbox.Attribute {
@@ -171,9 +178,9 @@ func (g *GameOfLife) UpdateCell(plane grid.Plane, position grid.Position) []engi
 	return []engine.CellUpdate{}
 }
 
-func (g *GameOfLife) Toggle(plane grid.Plane, position grid.Position) {
+func (g *GameOfLife) Toggle(plane grid.Plane, position grid.Position) grid.Cell {
 	if !plane.Bounds().Contains(position) {
-		return
+		return nil
 	}
 	cell := asLife(plane.Get(position))
 	if cell.Alive {
@@ -181,4 +188,5 @@ func (g *GameOfLife) Toggle(plane grid.Plane, position grid.Position) {
 	} else {
 		g.Set(position, Life{Alive: true})
 	}
+	return cell
 }

@@ -6,11 +6,11 @@ import (
 	"github.com/jpbetz/cellularautomata/apps/langton"
 	"github.com/jpbetz/cellularautomata/apps/wireworld"
 	"github.com/jpbetz/cellularautomata/io"
+	"github.com/jpbetz/cellularautomata/sdlui"
+	"github.com/mitchellh/cli"
 	"log"
 	"os"
 	"runtime"
-	"github.com/jpbetz/cellularautomata/sdlui"
-	"github.com/mitchellh/cli"
 )
 
 // Arrange that main.main runs on main thread.

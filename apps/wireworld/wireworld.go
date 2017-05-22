@@ -29,7 +29,7 @@ func (c *WireWorldCommand) Synopsis() string {
 }
 
 func wireworldMain(ui io.Renderer) {
-	f := setupLogging("log")
+	f := setupLogging("logs/wireworld.log")
 	defer f.Close()
 
 	ui.Run()

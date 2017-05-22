@@ -3,9 +3,10 @@ package sdlui
 import (
 	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
-  "github.com/veandco/go-sdl2/sdl"
+        "github.com/veandco/go-sdl2/sdl"
 	"github.com/nsf/termbox-go"
 	"fmt"
+	"log"
 )
 
 type UIUpdate struct {
@@ -41,11 +42,10 @@ var (
 
 func NewSdlUi(input chan io.InputEvent) *SdlUi {
 	sdl.Init(sdl.INIT_EVERYTHING)
-
 	window, err := sdl.CreateWindow("test", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		int(w), int(h), sdl.WINDOW_SHOWN)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("Error creating sdl window: %v", err))
 	}
 
 	surface, err := window.GetSurface()
@@ -63,8 +63,6 @@ func NewSdlUi(input chan io.InputEvent) *SdlUi {
 	}
 
 	window.UpdateSurface()
-
-	fmt.Println("NewSdlUi created")
 
 	return &SdlUi{
 		UpdateCh: make(chan interface{}, 5000),
@@ -94,20 +92,25 @@ func (s *SdlUi) Loop(done <-chan bool) {
 		if  event := sdl.PollEvent(); event != nil {
 			switch t := event.(type) {
 			case *sdl.QuitEvent:
+				log.Println("Quit event.")
 				s.input <- io.Quit{}
 				return
 			case *sdl.MouseButtonEvent:
-				//fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n",
-				//	t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
+				log.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n",
+					t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
 				if t.Button == 1 && t.State == 0 {
-					fmt.Println("Button clicked")
 					s.input <- io.Click{Position: grid.Position{int(t.X)/int(cellW), int(t.Y)/int(cellH)}}
 				}
 			case *sdl.KeyUpEvent:
-				//fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
-				//	t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
-				if t.Keysym.Sym == ' ' {
-					//s.input <- io.Pause{}
+				log.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
+					t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
+				switch t.Keysym.Sym {
+				case ' ':
+					s.input <- io.Pause{}
+				case 'q':
+					s.input <- io.Quit{}
+				default:
+					// do nothing
 				}
 			default:
 				// do nothing
@@ -123,8 +126,10 @@ func (s *SdlUi) Loop(done <-chan bool) {
 				s.UpdateCell(update.Position, update.Color)
 			}
 		case <-done:
-			fmt.Println("Done!")
+			log.Println("Done event recieved. Exiting Loop.")
 			return
+		default:
+			// do nothing
 		}
 	}
 }
@@ -148,16 +153,18 @@ func (s *SdlUi) handleInput() {
 			s.input <- io.Quit{}
 			return
 		case *sdl.MouseButtonEvent:
-			fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n",
+			log.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n",
 				t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
 		case *sdl.KeyUpEvent:
-			fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
+			log.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
 				t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			//if t.Keysym.Sym ==
 		default:
-			fmt.Println("Some event")
+			log.Println("Some event")
 		}
+		log.Println("Exiting handleInput.")
 	}
+
 }
 
 func (s *SdlUi) Close() {

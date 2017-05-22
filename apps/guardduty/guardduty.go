@@ -30,7 +30,7 @@ func (c *GuardDutyCommand) Synopsis() string {
 
 
 func guardDutyMain(ui io.Renderer) {
-	f := setupLogging("log")
+	f := setupLogging("logs/guardduty.log")
 	defer f.Close()
 
 	ui.Run()

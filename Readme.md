@@ -14,6 +14,9 @@ Build
 
 Requires:
 
+- Go 8.1+
+- SDL2
+
 ```
 brew install sdl2
 ```
