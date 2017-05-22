@@ -19,8 +19,8 @@ func init() {
 }
 
 func main() {
-	input := make(chan io.InputEvent, 100)
-	ui := sdlui.NewSdlUi(input)
+	input := make(chan io.InputEvent, 10)
+	ui := sdlui.NewSdlUi(input, 80, 50, 15, 15)
 	defer ui.Close()
 
 	c := cli.NewCLI("cellular", "1.0.0")

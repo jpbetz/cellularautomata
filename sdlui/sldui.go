@@ -31,19 +31,19 @@ type SdlUi struct {
 	// IO
 	input chan io.InputEvent
 
-	Width int
-	Height int
+	// number of cells wide and high
+	Width int32
+	Height int32
+
+	// width and height of each cell
+	CellWidth int32
+	CellHeight int32
 }
 
-var (
-  w, h int32 = 800, 600
-  cellW, cellH int32 = 20, 20
-)
-
-func NewSdlUi(input chan io.InputEvent) *SdlUi {
+func NewSdlUi(input chan io.InputEvent, w, h int32, cellW, cellH int32) *SdlUi {
 	sdl.Init(sdl.INIT_EVERYTHING)
 	window, err := sdl.CreateWindow("test", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
-		int(w), int(h), sdl.WINDOW_SHOWN)
+		int(w*cellW), int(h*cellH), sdl.WINDOW_SHOWN)
 	if err != nil {
 		panic(fmt.Sprintf("Error creating sdl window: %v", err))
 	}
@@ -53,26 +53,29 @@ func NewSdlUi(input chan io.InputEvent) *SdlUi {
 		panic(err)
 	}
 
-	cells := make([]*sdl.Rect, w/cellW*h/cellH)
-	for i := int32(0); i < w/cellW; i++ {
-		for j := int32(0); j < h/cellH; j++ {
+	s := &SdlUi{
+		UpdateCh: make(chan interface{}, 5000),
+		window: window,
+		surface: surface,
+		input: input,
+		Width: w,
+		Height: h,
+		CellWidth: cellW,
+		CellHeight: cellH,
+	}
+
+	s.cells = make([]*sdl.Rect, w*h)
+	for i := int32(0); i < w; i++ {
+		for j := int32(0); j < h; j++ {
 			rect := &sdl.Rect{i*cellW, j*cellH, cellW, cellH}
-			cells[pos(int(i), int(j))] = rect
+			s.cells[s.pos(int(i), int(j))] = rect
 			surface.FillRect(rect, toHex(termbox.ColorDefault))
 		}
 	}
 
 	window.UpdateSurface()
 
-	return &SdlUi{
-		UpdateCh: make(chan interface{}, 5000),
-		window: window,
-		surface: surface,
-		cells: cells,
-		input: input,
-		Width: int(w/cellW),
-		Height: int(h/cellH),
-	}
+	return s
 }
 
 func (s *SdlUi) SetView(view *io.View) {
@@ -100,13 +103,13 @@ func (s *SdlUi) Loop(done <-chan bool) {
 				log.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n",
 					t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
 				if t.Button == 1 && t.State & sdl.BUTTON_LEFT > 0 {
-					s.input <- io.Click{Position: grid.Position{int(t.X)/int(cellW), int(t.Y)/int(cellH)}}
+					s.input <- io.Click{Position: grid.Position{int(t.X)/int(s.CellWidth), int(t.Y)/int(s.CellHeight)}}
 				}
 			case *sdl.MouseMotionEvent:
 				log.Printf("[%d ms] MouseMotion\ttype:%d\tid:%d\tx:%d\ty:%d\ttxrel:%d\ttyrel:%d\tstate:%d\n",
 					t.Timestamp, t.Type, t.Which, t.X, t.Y, t.XRel, t.YRel, t.State)
 
-				newPosition := grid.Position{int(t.X)/int(cellW), int(t.Y)/int(cellH)}
+				newPosition := grid.Position{int(t.X)/int(s.CellWidth), int(t.Y)/int(s.CellHeight)}
 				if t.State & sdl.BUTTON_LEFT > 0 && newPosition != *lastMousePosition {
 					s.input <- io.Click{Position: newPosition}
 				}
@@ -149,10 +152,10 @@ func (s *SdlUi) Refresh() {
 }
 
 func (s *SdlUi) UpdateCell(position grid.Position, hexColor uint32) {
-	if pos(position.X, position.Y) >= len(s.cells) {
+	if s.pos(position.X, position.Y) >= len(s.cells) {
 		return
 	}
-	rect := s.cells[pos(position.X, position.Y)]
+	rect := s.cells[s.pos(position.X, position.Y)]
 	s.surface.FillRect(rect, hexColor)
 }
 
@@ -204,8 +207,8 @@ func toHex(attribute termbox.Attribute) uint32 {
 	}
 }
 
-func pos(x int, y int) int {
-	return y*(int(w)/int(cellW)) + x
+func (s *SdlUi) pos(x int, y int) int {
+	return y * int(s.Width) + x
 }
 
 func (ui *SdlUi) Draw() {
