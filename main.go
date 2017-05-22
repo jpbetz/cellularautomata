@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strconv"
 )
 
 // Arrange that main.main runs on main thread.
@@ -19,12 +20,19 @@ func init() {
 }
 
 func main() {
-	input := make(chan io.InputEvent, 10)
-	ui := sdlui.NewSdlUi(input, 80, 50, 15, 15)
-	defer ui.Close()
-
 	c := cli.NewCLI("cellular", "1.0.0")
 	c.Args = os.Args[1:]
+
+	input := make(chan io.InputEvent, 10)
+	ui := sdlui.NewSdlUi(
+		input,
+		intEnvOrDefault("WIDTH", 60),
+		intEnvOrDefault("HEIGHT", 40),
+		intEnvOrDefault("CWIDTH", 15),
+		intEnvOrDefault("CHEIGHT", 15),
+	)
+	defer ui.Close()
+
 	c.Commands = map[string]cli.CommandFactory{
 		"conway": func() (cli.Command, error) {
 			return &conway.ConwayCommand{
@@ -54,4 +62,16 @@ func main() {
 	}
 
 	os.Exit(exitStatus)
+}
+
+func intEnvOrDefault(envName string, def int32) int32 {
+	if wstr := os.Getenv(envName); len(wstr) > 0 {
+		i, err := strconv.Atoi(wstr)
+		if err != nil {
+			panic("WIDTH environment vairable must be int value, but was: " + wstr)
+		}
+		return int32(i)
+	} else {
+		return def
+	}
 }
