@@ -3,12 +3,11 @@
 package region
 
 const (
-	UnitNONE = 0
+	UnitNONE      = 0
 	UnitGuardUnit = 1
 )
 
 var EnumNamesUnit = map[int]string{
-	UnitNONE:"NONE",
-	UnitGuardUnit:"GuardUnit",
+	UnitNONE:      "NONE",
+	UnitGuardUnit: "GuardUnit",
 }
-

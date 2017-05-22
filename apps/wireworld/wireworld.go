@@ -1,16 +1,15 @@
 package wireworld
 
 import (
+	"fmt"
 	"github.com/jpbetz/cellularautomata/engine"
 	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
 	"github.com/nsf/termbox-go"
-	"os"
-	"fmt"
 	"log"
+	"os"
 	"time"
 )
-
 
 type WireWorldCommand struct {
 	UI io.Renderer

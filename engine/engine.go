@@ -16,10 +16,10 @@ type UpdateHandler interface {
 }
 
 type Engine struct {
-	Plane   grid.Plane
-	UI      io.Renderer
-	Playing bool
-	Handler UpdateHandler
+	Plane      grid.Plane
+	UI         io.Renderer
+	Playing    bool
+	Handler    UpdateHandler
 	ClockSpeed time.Duration
 	eventClock *time.Ticker
 }

@@ -2,16 +2,16 @@ package guardduty
 
 import (
 	"fmt"
+	"github.com/google/flatbuffers/go"
 	"github.com/jpbetz/cellularautomata/engine"
+	"github.com/jpbetz/cellularautomata/flatbuffers/region"
 	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
 	"github.com/nsf/termbox-go"
-	"os"
-	"log"
-	"time"
-	"github.com/jpbetz/cellularautomata/flatbuffers/region"
 	"io/ioutil"
-	"github.com/google/flatbuffers/go"
+	"log"
+	"os"
+	"time"
 )
 
 type GuardDutyCommand struct {
@@ -82,12 +82,12 @@ func guardDutyMain(ui io.Renderer) {
 					game.Playing = true
 				}
 			case io.Save:
-				log.Printf("Writing log file: %s\n", dataFile)
+				log.Printf("Writing log file: %s\n", saveDataFile)
 				buf := game.Save(board.Cells, board.W, board.H)
-				if err := ioutil.WriteFile(dataFile, buf, 0664); err != nil {
+				if err := ioutil.WriteFile(saveDataFile, buf, 0664); err != nil {
 					log.Printf("Failed to write file %v\n", err)
 				}
-				log.Printf("Wrote log file: %s\n", dataFile)
+				log.Printf("Wrote log file: %s\n", saveDataFile)
 			}
 		}
 	}()
@@ -213,52 +213,36 @@ func NewGuardDuty(plane grid.Plane, ui io.Renderer) *GuardDuty {
 	return game
 }
 
-var Waypoint1 = &Waypoint{position: grid.Position{6, 1}}
-var Waypoint2 = &Waypoint{position: grid.Position{6, 6}}
-var Waypoint3 = &Waypoint{position: grid.Position{1, 1}}
-
-var Guard1 = &Guard{nextWaypoint: Waypoint1}
-
 var O = Cell{State: Empty}
 var B = Cell{State: Barrier}
-var G = Cell{State: Empty, Unit: Guard1}
 
-var dataFile = "data/guardduty/defaultsave.dat"
+var initialDataFile = "data/guardduty/initial.dat"
+var saveDataFile = "data/guardduty/save.dat"
 
 func (g *GuardDuty) initialize() {
-	Waypoint1.next = Waypoint2
-	Waypoint2.next = Waypoint3
-	Waypoint3.next = Waypoint1
 
-	buf, err := ioutil.ReadFile(dataFile)
-	var example []Cell
-	var w = 8
-	var h = 8
-	if err != nil {
-		example = []Cell{
-			B, B, B, B, B, B, B, B,
-			B, G, O, O, O, O, O, B,
-			B, O, B, O, O, B, B, B,
-			B, B, B, O, O, O, B, B,
-			B, O, B, O, B, O, O, B,
-			B, O, O, O, B, B, O, B,
-			B, O, O, O, O, O, O, B,
-			B, B, B, B, B, B, B, B,
-		}
-	} else {
-		example, w, h = g.Load(buf)
+	file := saveDataFile
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		log.Println("Save file not found. Loading initial file.")
+		file = initialDataFile
 	}
 
+	buf, err := ioutil.ReadFile(file)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to read file: %s: %#v", file, err))
+	}
+
+	example, w, h := g.Load(buf)
 	for i := 0; i < len(example); i++ {
-			example := example[i]
-			p := grid.Position{i % w , i / w}
-			current := asCell(g.Plane.Get(p))
-			current.State = example.State
-			current.Unit = example.Unit
-			if p != current.Position {
-				panic("p != current.Position")
-			}
-			g.Set(p, current)
+		example := example[i]
+		p := grid.Position{i % w, i / w}
+		current := asCell(g.Plane.Get(p))
+		current.State = example.State
+		current.Unit = example.Unit
+		if p != current.Position {
+			panic("p != current.Position")
+		}
+		g.Set(p, current)
 	}
 	g.UI.SetStatus(fmt.Sprintf("GuardDuty (%d, %d)", w, h))
 }
@@ -273,14 +257,14 @@ func (g *GuardDuty) Load(buf []byte) ([]Cell, int, int) {
 
 	cells := make([]Cell, plane.TilesLength())
 	for i := 0; i < plane.TilesLength(); i++ {
-			tile := &region.Tile{}
-			plane.Tiles(tile, i)
-			//log.Printf("Loaded tile at %d (%d, %d), type: %d\n", i, (i % planeW), (i / planeW), tile.TileType())
-			if int(tile.TileType()) == region.TileTypeBarrier {
-				cells[i] = B
-			} else {
-				cells[i] = O
-			}
+		tile := &region.Tile{}
+		plane.Tiles(tile, i)
+		//log.Printf("Loaded tile at %d (%d, %d), type: %d\n", i, (i % planeW), (i / planeW), tile.TileType())
+		if int(tile.TileType()) == region.TileTypeBarrier {
+			cells[i] = B
+		} else {
+			cells[i] = O
+		}
 	}
 	log.Printf("Loaded %d tiles\n", plane.TilesLength())
 
@@ -300,7 +284,7 @@ func (g *GuardDuty) Load(buf []byte) ([]Cell, int, int) {
 		if i > 0 {
 			waypoints[i-1].next = waypoint
 		}
-		if i == guard.WaypointsLength() - 1 {
+		if i == guard.WaypointsLength()-1 {
 			waypoint.next = waypoints[0]
 		}
 		waypoints[i] = waypoint
@@ -309,13 +293,12 @@ func (g *GuardDuty) Load(buf []byte) ([]Cell, int, int) {
 
 	guardIdx := int(guardPosition.X()) + (planeW * int(guardPosition.Y()))
 	log.Printf("Loading guard at idx: %d, x,y = %d, %d", guardIdx, guardPosition.X(), guardPosition.Y())
-	cells[guardIdx] = Cell {
+	cells[guardIdx] = Cell{
 		State: Empty,
-		Unit: &Guard{nextWaypoint: waypoints[0]},
+		Unit:  &Guard{nextWaypoint: waypoints[0]},
 	}
 	return cells, planeW, planeH
 }
-
 
 func (g *GuardDuty) Save(cells []grid.Cell, w, h int) []byte {
 	builder := flatbuffers.NewBuilder(0)
@@ -349,7 +332,7 @@ func (g *GuardDuty) Save(cells []grid.Cell, w, h int) []byte {
 	// plane tiles vector
 	log.Printf("Writing %d tiles", len(tileEnds))
 	region.PlaneStartTilesVector(builder, len(tileEnds))
-	for i := len(tileEnds)-1; i >= 0; i-- {
+	for i := len(tileEnds) - 1; i >= 0; i-- {
 		builder.PrependUOffsetT(tileEnds[i])
 	}
 	tilesVectorEnd := builder.EndVector(len(tileEnds))

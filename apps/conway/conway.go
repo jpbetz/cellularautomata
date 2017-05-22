@@ -1,13 +1,13 @@
 package conway
 
 import (
+	"fmt"
 	"github.com/jpbetz/cellularautomata/engine"
 	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
 	"github.com/nsf/termbox-go"
-	"os"
-	"fmt"
 	"log"
+	"os"
 	"time"
 )
 
@@ -73,7 +73,6 @@ func conwayMain(ui io.Renderer) {
 
 	ui.Loop(done)
 }
-
 
 func setupLogging(filename string) *os.File {
 	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)

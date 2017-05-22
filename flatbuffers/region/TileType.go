@@ -3,12 +3,11 @@
 package region
 
 const (
-	TileTypeEmpty = 0
+	TileTypeEmpty   = 0
 	TileTypeBarrier = 1
 )
 
 var EnumNamesTileType = map[int]string{
-	TileTypeEmpty:"Empty",
-	TileTypeBarrier:"Barrier",
+	TileTypeEmpty:   "Empty",
+	TileTypeBarrier: "Barrier",
 }
-
