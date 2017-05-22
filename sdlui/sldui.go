@@ -88,6 +88,7 @@ func (s *SdlUi) Input() chan io.InputEvent {
 
 func (s *SdlUi) Loop(done <-chan bool) {
 
+	var lastMousePosition *grid.Position = nil
 	for {
 		if  event := sdl.PollEvent(); event != nil {
 			switch t := event.(type) {
@@ -98,9 +99,18 @@ func (s *SdlUi) Loop(done <-chan bool) {
 			case *sdl.MouseButtonEvent:
 				log.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n",
 					t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
-				if t.Button == 1 && t.State == 0 {
+				if t.Button == 1 && t.State & sdl.BUTTON_LEFT > 0 {
 					s.input <- io.Click{Position: grid.Position{int(t.X)/int(cellW), int(t.Y)/int(cellH)}}
 				}
+			case *sdl.MouseMotionEvent:
+				log.Printf("[%d ms] MouseMotion\ttype:%d\tid:%d\tx:%d\ty:%d\ttxrel:%d\ttyrel:%d\tstate:%d\n",
+					t.Timestamp, t.Type, t.Which, t.X, t.Y, t.XRel, t.YRel, t.State)
+
+				newPosition := grid.Position{int(t.X)/int(cellW), int(t.Y)/int(cellH)}
+				if t.State & sdl.BUTTON_LEFT > 0 && newPosition != *lastMousePosition {
+					s.input <- io.Click{Position: newPosition}
+				}
+				lastMousePosition = &newPosition
 			case *sdl.KeyUpEvent:
 				log.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
 					t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
