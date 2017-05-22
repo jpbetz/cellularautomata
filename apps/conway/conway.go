@@ -8,6 +8,7 @@ import (
 	"os"
 	"fmt"
 	"log"
+	"time"
 )
 
 const ALIVE = '█'
@@ -36,7 +37,7 @@ func conwayMain(ui io.Renderer) {
 
 	ui.Run()
 
-	board := grid.NewBasicBoard(1000, 1000)
+	board := grid.NewBasicBoard(80, 80)
 	view := &io.View{Plane: board, Offset: grid.Origin}
 	ui.SetView(view)
 	board.Initialize(Life{Alive: false})
@@ -56,7 +57,6 @@ func conwayMain(ui io.Renderer) {
 			case io.Click:
 				cell := game.Toggle(game.Plane, event.Position)
 				if cell != nil {
-					ui.Set(event.Position, cell)
 					ui.Draw()
 				}
 			case io.Pause:
@@ -125,7 +125,7 @@ var Off = Life{Alive: false}
 
 func NewGameOfLife(plane grid.Plane, ui io.Renderer) *GameOfLife {
 	game := &GameOfLife{
-		Engine: &engine.Engine{Plane: plane, UI: ui},
+		Engine: &engine.Engine{Plane: plane, UI: ui, ClockSpeed: time.Millisecond * 250},
 	}
 	game.Engine.Handler = game
 	game.initialize()

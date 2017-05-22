@@ -8,6 +8,7 @@ import (
 	"os"
 	"fmt"
 	"log"
+	"time"
 )
 
 type LangtonCommand struct {
@@ -144,7 +145,7 @@ var Default = Square{}
 
 func NewAnts(plane grid.Plane, ui io.Renderer) *Ants {
 	game := &Ants{
-		Engine: &engine.Engine{Plane: plane, UI: ui},
+		Engine: &engine.Engine{Plane: plane, UI: ui, ClockSpeed: time.Millisecond * 100},
 	}
 	game.Engine.Handler = game
 	game.initialize()

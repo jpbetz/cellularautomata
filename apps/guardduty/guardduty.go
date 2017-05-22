@@ -8,6 +8,7 @@ import (
 	"github.com/nsf/termbox-go"
 	"os"
 	"log"
+	"time"
 )
 
 
@@ -197,7 +198,7 @@ type GuardDuty struct {
 
 func NewGuardDuty(plane grid.Plane, ui io.Renderer) *GuardDuty {
 	game := &GuardDuty{
-		Engine: &engine.Engine{Plane: plane, UI: ui},
+		Engine: &engine.Engine{Plane: plane, UI: ui, ClockSpeed: time.Millisecond * 100},
 	}
 	game.Engine.Handler = game
 	game.initialize()

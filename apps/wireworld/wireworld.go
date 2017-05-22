@@ -8,6 +8,7 @@ import (
 	"os"
 	"fmt"
 	"log"
+	"time"
 )
 
 
@@ -141,7 +142,7 @@ var Default = Cell{}
 
 func NewWireworld(plane grid.Plane, ui io.Renderer) *Wireworld {
 	game := &Wireworld{
-		Engine: &engine.Engine{Plane: plane, UI: ui},
+		Engine: &engine.Engine{Plane: plane, UI: ui, ClockSpeed: time.Millisecond * 100},
 	}
 	game.Engine.Handler = game
 	game.initialize()

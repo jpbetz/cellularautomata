@@ -20,15 +20,18 @@ type Engine struct {
 	UI      io.Renderer
 	Playing bool
 	Handler UpdateHandler
+	ClockSpeed time.Duration
+	eventClock *time.Ticker
 }
 
 func (e *Engine) StartClock() *time.Ticker {
-	eventClock := time.NewTicker(time.Millisecond * 500)
+	eventClock := time.NewTicker(e.ClockSpeed)
 	go func() {
 		for range eventClock.C {
 			e.clockEvent()
 		}
 	}()
+	e.eventClock = eventClock
 	return eventClock
 }
 
