@@ -5,7 +5,76 @@ import (
 	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
 	"github.com/nsf/termbox-go"
+	"os"
+	"fmt"
+	"log"
 )
+
+type LangtonCommand struct {
+	UI io.Renderer
+}
+
+func (c *LangtonCommand) Help() string {
+	return "Langton's Ants simulates an ant that walks a route that depends on state of ground cells."
+}
+
+func (c *LangtonCommand) Run(args []string) int {
+	langtonMain(c.UI)
+	return 0
+}
+
+func (c *LangtonCommand) Synopsis() string {
+	return "Langton's Ants"
+}
+
+func langtonMain(ui io.Renderer) {
+	f := setupLogging("log")
+	defer f.Close()
+
+	ui.Run()
+
+	board := grid.NewBasicBoard(1000, 1000)
+	view := &io.View{Plane: board, Offset: grid.Origin}
+	ui.SetView(view)
+	board.Initialize(Square{})
+	game := NewAnts(board, ui)
+	eventClock := game.StartClock()
+	game.Playing = true
+
+	done := make(chan bool)
+
+	go func() {
+		for {
+			in := <-ui.Input()
+			switch in.(type) {
+			case io.Quit:
+				done <- true
+				return
+			case io.Click:
+
+			case io.Pause:
+				if game.Playing {
+					eventClock.Stop()
+					game.Playing = false
+				} else {
+					eventClock = game.StartClock()
+					game.Playing = true
+				}
+			}
+		}
+	}()
+
+	ui.Loop(done)
+}
+
+func setupLogging(filename string) *os.File {
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		panic(fmt.Sprintf("error opening file: %v", err))
+	}
+	log.SetOutput(f)
+	return f
+}
 
 const AntColor = termbox.ColorBlue
 const Empty = ' '

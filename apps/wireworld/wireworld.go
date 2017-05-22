@@ -5,7 +5,76 @@ import (
 	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
 	"github.com/nsf/termbox-go"
+	"os"
+	"fmt"
+	"log"
 )
+
+
+type WireWorldCommand struct {
+	UI io.Renderer
+}
+
+func (c *WireWorldCommand) Help() string {
+	return "Wire World is a cellular autonomata that simulates electronic circuits."
+}
+
+func (c *WireWorldCommand) Run(args []string) int {
+	wireworldMain(c.UI)
+	return 0
+}
+
+func (c *WireWorldCommand) Synopsis() string {
+	return "Wire World"
+}
+
+func wireworldMain(ui io.Renderer) {
+	f := setupLogging("log")
+	defer f.Close()
+
+	ui.Run()
+
+	board := grid.NewBasicBoard(1000, 1000)
+	view := &io.View{Plane: board, Offset: grid.Origin}
+	ui.SetView(view)
+	board.Initialize(Cell{})
+	game := NewWireworld(board, ui)
+	eventClock := game.StartClock()
+	game.Playing = true
+
+	done := make(chan bool)
+	go func() {
+		for {
+			in := <-ui.Input()
+			switch in.(type) {
+			case io.Quit:
+				done <- true
+				return
+			case io.Click:
+
+			case io.Pause:
+				if game.Playing {
+					eventClock.Stop()
+					game.Playing = false
+				} else {
+					eventClock = game.StartClock()
+					game.Playing = true
+				}
+			}
+		}
+	}()
+
+	ui.Loop(done)
+}
+
+func setupLogging(filename string) *os.File {
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		panic(fmt.Sprintf("error opening file: %v", err))
+	}
+	log.SetOutput(f)
+	return f
+}
 
 const ElectronHeadColor = termbox.ColorBlue
 const ElectronTailColor = termbox.ColorRed

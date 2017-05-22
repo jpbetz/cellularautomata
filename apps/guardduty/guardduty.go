@@ -6,7 +6,95 @@ import (
 	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
 	"github.com/nsf/termbox-go"
+	"os"
+	"log"
 )
+
+
+type GuardDutyCommand struct {
+	UI io.Renderer
+}
+
+func (c *GuardDutyCommand) Help() string {
+	return "Guard Duty creates a simple waypoint circle that a guard walks around, using A* to navigate."
+}
+
+func (c *GuardDutyCommand) Run(args []string) int {
+	guardDutyMain(c.UI)
+	return 0
+}
+
+func (c *GuardDutyCommand) Synopsis() string {
+	return "Guard Duty"
+}
+
+
+func guardDutyMain(ui io.Renderer) {
+	f := setupLogging("log")
+	defer f.Close()
+
+	ui.Run()
+
+	board := grid.NewBasicBoard(100, 100)
+	view := &io.View{Plane: board, Offset: grid.Origin}
+	ui.SetView(view)
+
+	for x := board.Bounds().Corner1.X; x <= board.Bounds().Corner2.X; x++ {
+		for y := board.Bounds().Corner1.Y; y <= board.Bounds().Corner2.Y; y++ {
+			p := grid.Position{x, y}
+			board.Set(p, Cell{
+				State:    Empty,
+				Position: p,
+				Plane:    board,
+			})
+		}
+	}
+
+	game := NewGuardDuty(board, ui)
+	eventClock := game.StartClock()
+	game.Playing = true
+
+	done := make(chan bool)
+	go func() {
+		for {
+			in := <-ui.Input()
+			switch event := in.(type) {
+			case io.Quit:
+				done <- true
+				return
+			case io.Click:
+				cell := board.Get(event.Position).(Cell)
+				if cell.State == Barrier {
+					cell.State = Empty
+				} else {
+					cell.State = Barrier
+				}
+				game.Set(event.Position, cell)
+				game.UI.Draw()
+			case io.Pause:
+				if game.Playing {
+					eventClock.Stop()
+					game.Playing = false
+				} else {
+					eventClock = game.StartClock()
+					game.Playing = true
+				}
+			}
+		}
+	}()
+
+	// main thread game loop
+	ui.Loop(done)
+}
+
+func setupLogging(filename string) *os.File {
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		panic(fmt.Sprintf("error opening file: %v", err))
+	}
+	log.SetOutput(f)
+	return f
+}
 
 type Unit interface{}
 

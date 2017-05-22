@@ -4,7 +4,6 @@ import (
 	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
 	"time"
-	"fmt"
 )
 
 type CellUpdate struct {
@@ -24,23 +23,16 @@ type Engine struct {
 }
 
 func (e *Engine) StartClock() *time.Ticker {
-	fmt.Print("Starting event clock\n")
 	eventClock := time.NewTicker(time.Millisecond * 500)
 	go func() {
 		for range eventClock.C {
 			e.clockEvent()
 		}
 	}()
-	fmt.Print("Event clock started\n")
 	return eventClock
 }
 
 func (e *Engine) clockEvent() {
-	//w, h := termbox.Size()
-	//bounds := grid.Rectangle{
-	//  grid.Position {0,0},
-	//  grid.Position {e.UI.(*sdlui.SdlUi).Width,e.UI.(*sdlui.SdlUi).Height},
-	//}
 	bounds := e.Plane.Bounds()
 	changes := []CellUpdate{}
 	for i := bounds.Corner1.X; i < bounds.Corner2.X; i++ {
@@ -52,8 +44,7 @@ func (e *Engine) clockEvent() {
 		}
 	}
 	for _, change := range changes {
-		e.Plane.Set(change.Position, change.State)
-		e.UI.Set(change.Position, change.State)
+		e.Set(change.Position, change.State)
 	}
 	e.UI.Draw()
 }

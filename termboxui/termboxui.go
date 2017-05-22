@@ -51,6 +51,10 @@ func (ui *TermboxUI) Run() {
 	go ui.handleInput()
 }
 
+func (ui *TermboxUI) Loop(done <-chan bool) {
+	<-done
+}
+
 func (ui *TermboxUI) Close() {
 	defer termbox.Close()
 	defer close(ui.refreshCh)
@@ -98,9 +102,12 @@ func (ui *TermboxUI) handleInput() {
 			ui.Draw()
 		default:
 			ui.warn(fmt.Sprintf("Unexpected input: %v", ev))
-			ui.Draw()
 		}
 	}
+}
+
+func (ui *TermboxUI) Input() chan io.InputEvent {
+	return ui.input
 }
 
 func (ui *TermboxUI) warn(msg string) {

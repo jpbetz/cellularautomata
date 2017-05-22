@@ -21,4 +21,5 @@ brew install sdl2
 References
 ----------
 
-https://github.com/golang/go/wiki/LockOSThread
+- https://github.com/golang/go/wiki/LockOSThread
+- https://godoc.org/github.com/veandco/go-sdl2

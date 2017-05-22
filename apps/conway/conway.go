@@ -5,10 +5,81 @@ import (
 	"github.com/jpbetz/cellularautomata/grid"
 	"github.com/jpbetz/cellularautomata/io"
 	"github.com/nsf/termbox-go"
+	"os"
+	"fmt"
+	"log"
 )
 
 const ALIVE = '█'
 const DEAD = ' '
+
+type ConwayCommand struct {
+	UI io.Renderer
+}
+
+func (c *ConwayCommand) Help() string {
+	return "Conway's Game of Life"
+}
+
+func (c *ConwayCommand) Run(args []string) int {
+	conwayMain(c.UI)
+	return 0
+}
+
+func (c *ConwayCommand) Synopsis() string {
+	return "Conway's Game of Life"
+}
+
+func conwayMain(ui io.Renderer) {
+	f := setupLogging("conway.log")
+	defer f.Close()
+
+	ui.Run()
+
+	board := grid.NewBasicBoard(1000, 1000)
+	view := &io.View{Plane: board, Offset: grid.Origin}
+	ui.SetView(view)
+	board.Initialize(Life{Alive: false})
+	game := NewGameOfLife(board, ui)
+	eventClock := game.StartClock()
+	game.Playing = true
+
+	done := make(chan bool)
+
+	go func() {
+		for {
+			in := <-ui.Input()
+			switch event := in.(type) {
+			case io.Quit:
+				done <- true
+				return
+			case io.Click:
+				game.Toggle(game.Plane, event.Position)
+				ui.Draw()
+			case io.Pause:
+				if game.Playing {
+					eventClock.Stop()
+					game.Playing = false
+				} else {
+					eventClock = game.StartClock()
+					game.Playing = true
+				}
+			}
+		}
+	}()
+
+	ui.Loop(done)
+}
+
+
+func setupLogging(filename string) *os.File {
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		panic(fmt.Sprintf("error opening file: %v", err))
+	}
+	log.SetOutput(f)
+	return f
+}
 
 type Life struct {
 	Alive bool

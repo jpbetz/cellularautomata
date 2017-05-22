@@ -84,8 +84,36 @@ func (s *SdlUi) SetView(view *io.View) {
 func (s *SdlUi) Run() {
 }
 
+func (s *SdlUi) Input() chan io.InputEvent {
+	return s.input
+}
+
 func (s *SdlUi) Loop(done <-chan bool) {
+
 	for {
+		if  event := sdl.PollEvent(); event != nil {
+			switch t := event.(type) {
+			case *sdl.QuitEvent:
+				s.input <- io.Quit{}
+				return
+			case *sdl.MouseButtonEvent:
+				//fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n",
+				//	t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
+				if t.Button == 1 && t.State == 0 {
+					fmt.Println("Button clicked")
+					s.input <- io.Click{Position: grid.Position{int(t.X)/int(cellW), int(t.Y)/int(cellH)}}
+				}
+			case *sdl.KeyUpEvent:
+				//fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
+				//	t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
+				if t.Keysym.Sym == ' ' {
+					//s.input <- io.Pause{}
+				}
+			default:
+				// do nothing
+			}
+		}
+
 		select {
 		case update := <-s.UpdateCh:
 			switch update := update.(type) {
