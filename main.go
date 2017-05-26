@@ -12,6 +12,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"fmt"
 )
 
 // Arrange that main.main runs on main thread.
@@ -30,6 +31,7 @@ func main() {
 		intEnvOrDefault("HEIGHT", 40),
 		intEnvOrDefault("CWIDTH", 15),
 		intEnvOrDefault("CHEIGHT", 15),
+		intEnvOrDefault("CBORDER", 1),
 	)
 	defer ui.Close()
 
@@ -68,7 +70,7 @@ func intEnvOrDefault(envName string, def int32) int32 {
 	if wstr := os.Getenv(envName); len(wstr) > 0 {
 		i, err := strconv.Atoi(wstr)
 		if err != nil {
-			panic("WIDTH environment vairable must be int value, but was: " + wstr)
+			panic(fmt.Sprintf("%s environment variable must be an integer, but was %s", envName, wstr))
 		}
 		return int32(i)
 	} else {

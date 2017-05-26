@@ -6,6 +6,7 @@ import (
 	"github.com/jpbetz/cellularautomata/io"
 	"github.com/nsf/termbox-go"
 	"github.com/veandco/go-sdl2/sdl"
+	sdlfont "github.com/veandco/go-sdl2/sdl_ttf"
 	"log"
 )
 
@@ -39,10 +40,17 @@ type SdlUi struct {
 	CellHeight int32
 }
 
-func NewSdlUi(input chan io.InputEvent, w, h int32, cellW, cellH int32) *SdlUi {
+var statusHeight = 20
+
+func NewSdlUi(input chan io.InputEvent, w, h int32, cellW, cellH int32, cellBorder int32) *SdlUi {
 	sdl.Init(sdl.INIT_EVERYTHING)
+
+	if err := sdlfont.Init(); err != nil {
+		panic(fmt.Sprintf("Failed to initialize TTF: %s\n", err))
+	}
+
 	window, err := sdl.CreateWindow("test", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
-		int(w*cellW), int(h*cellH), sdl.WINDOW_SHOWN)
+		int(w*cellW), int(h*cellH) + statusHeight, sdl.WINDOW_SHOWN)
 	if err != nil {
 		panic(fmt.Sprintf("Error creating sdl window: %v", err))
 	}
@@ -66,7 +74,12 @@ func NewSdlUi(input chan io.InputEvent, w, h int32, cellW, cellH int32) *SdlUi {
 	s.cells = make([]*sdl.Rect, w*h)
 	for i := int32(0); i < w; i++ {
 		for j := int32(0); j < h; j++ {
-			rect := &sdl.Rect{i * cellW, j * cellH, cellW, cellH}
+			rect := &sdl.Rect{
+				i * cellW + cellBorder,
+				j * cellH + cellBorder,
+				cellW - cellBorder*2,
+				cellH - cellBorder*2,
+			}
 			s.cells[s.pos(int(i), int(j))] = rect
 			surface.FillRect(rect, toHex(termbox.ColorDefault))
 		}
@@ -217,5 +230,27 @@ func (ui *SdlUi) Draw() {
 }
 
 func (s *SdlUi) SetStatus(msg string) {
-	fmt.Sprintf(msg)
+	var err error
+	var font *sdlfont.Font
+	var solid *sdl.Surface
+
+	rect := &sdl.Rect{0, s.Height*s.CellHeight, s.Width*s.CellWidth, int32(statusHeight)}
+	s.surface.FillRect(rect, 0x00333fff)
+	font, err = sdlfont.OpenFont("fonts/Hack-Bold.ttf", 14)
+	if err != nil {
+		panic(err)
+	}
+	defer font.Close()
+
+	solid, err = font.RenderUTF8_Blended(msg, sdl.Color{255, 255, 255, 255})
+	if err != nil {
+		panic(err)
+	}
+	defer solid.Free()
+
+	textarea := &sdl.Rect{8, s.Height*s.CellHeight + 1, s.Width*s.CellWidth-16, int32(statusHeight - 1)}
+	err = solid.Blit(nil, s.surface, textarea)
+	if err != nil {
+		panic(err)
+	}
 }
